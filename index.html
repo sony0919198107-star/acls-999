@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>999 急救即時紀錄與品管系統｜曾妍鳳 專科護理師</title>
+<style>
+:root{--navy:#102f4a;--blue:#2684ff;--green:#20a66a;--red:#df4b4b;--orange:#f2a927;--purple:#7650e8;--text:#17324a;--muted:#6d8192;--line:#dce6ed;--shadow:0 8px 24px rgba(24,53,78,.10)}
+*{box-sizing:border-box}
+body{margin:0;background:#edf2f6;color:var(--text);font-family:"Microsoft JhengHei","Noto Sans TC",Arial,sans-serif}
+.container{max-width:1600px;margin:auto;padding:22px}
+header{background:var(--navy);color:#fff;border-radius:18px;padding:22px 26px;box-shadow:var(--shadow);margin-bottom:16px}
+header h1{margin:0;font-size:26px} header p{margin:6px 0 0;opacity:.82;font-size:14px}
+.card{background:#fff;border-radius:18px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+.section-title{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;margin-bottom:16px}
+.section-title:before{content:"";width:6px;height:27px;background:var(--blue);border-radius:4px}
+.page-label{display:inline-block;background:#dbeaff;color:#1766a8;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;margin-bottom:12px}
+.patient-grid,.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.status-grid{grid-template-columns:1.1fr .65fr 1.15fr .8fr}
+.info{background:#f4f7fa;border-radius:13px;padding:15px}.info small{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}.info strong{font-size:21px}.status strong{font-size:19px}
+.live-state{border-left:6px solid var(--blue);padding:18px 20px}.live-state .big{font-size:23px;font-weight:800}.live-state .sub{margin-top:5px;color:var(--muted)}
+.two-col{display:grid;grid-template-columns:1fr 1.38fr;gap:18px}
+.timer{background:var(--navy);color:#fff;min-height:245px}.timer .time{font-size:65px;font-weight:800;letter-spacing:2px;margin:12px 0}.timer .hint{color:#d8e7f4}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+button{border:0;border-radius:11px;padding:13px 18px;font-size:16px;font-weight:800;cursor:pointer}
+button:disabled{opacity:.42;cursor:not-allowed}
+.primary{background:var(--blue);color:#fff}.danger{background:var(--red);color:#fff}.neutral{background:#e4e9ee;color:#243d52}.green{background:var(--green);color:#fff}.orange{background:var(--orange);color:#172a3b}.purple{background:var(--purple);color:#fff}.dark{background:#35536e;color:#fff}
+
+/* 整合版 Timeline 與 CPR Cycle Engine */
+.timeline{min-height:245px;max-height:560px;overflow:auto}
+.integrated-cycle-box{background:#102f4a;color:#fff;border-radius:15px;padding:16px 20px;margin-bottom:12px}
+.integrated-cycle-box.waiting{background:#fff1d5;color:#704d00;border:2px solid #efca7a}
+.integrated-cycle-box.waiting .time{color:#c25a1a}
+.cycle-header-grid{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center}
+.cycle-big-num{font-size:54px;color:var(--blue);font-weight:900;line-height:1}
+.integrated-cycle-box.waiting .cycle-big-num{color:#c25a1a}
+.progress{height:10px;background:#234460;border-radius:20px;overflow:hidden;margin:8px 0}
+.integrated-cycle-box.waiting .progress{background:#e2cfa2}
+.progress>div{height:100%;background:var(--blue);width:0%;transition:width .2s}
+.integrated-cycle-box.waiting .progress>div{background:#c25a1a}
+.cycle-countdown-time{font-size:46px;font-weight:900;letter-spacing:2px;text-align:right;line-height:1}
+
+.event{display:grid;grid-template-columns:82px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid #e7edf2}
+.event:last-child{border-bottom:0}
+.event-time{font-weight:800;color:var(--blue)}
+.event-main strong{display:block;font-size:15px}
+.event-main span{color:var(--muted);font-size:13px}
+
+/* 心律按鈕設計 */
+.rhythm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.rhythm-btn{min-height:64px;display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:10px;transition:0.15s}
+.rhythm-btn b{font-size:17px}.rhythm-btn small{margin-top:3px;font-size:11px}
+.vf{background:#ffd3d3;color:#a52b2b}.pvt{background:#ffe0ce;color:#9c3c13}.pea{background:#ffedb9;color:#775a00}.asy{background:#dfe3e8;color:#354250}.other{background:#d9eaff;color:#17609d}
+.rhythm-btn:hover:not(:disabled){filter:brightness(0.95)}
+
+/* 評估面板與按壓中斷 >10 秒警示樣式 */
+.assessment{display:none;margin-top:14px;border-radius:14px;padding:16px;transition:all 0.3s}
+.assessment.show{display:block}
+.assessment.normal{background:#e8f4fd;border:2px solid #90caf9;color:#0d47a1}
+.assessment.overtime{background:#ffebee;border:2px solid #ef5350;color:#b71c1c;animation:pulseWarn 1s infinite alternate}
+@keyframes pulseWarn { from { transform: scale(1); } to { transform: scale(1.015); } }
+
+.prompt{background:#fff4d7;border:1px solid #f1d184;color:#735400;border-radius:12px;padding:12px;margin-top:12px;font-weight:700}
+.action-grid,.drug-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.action-grid button{min-height:58px}.action-grid button small{display:block;margin-top:4px;font-size:11px;font-weight:600;opacity:.9}
+.drug-btn{min-height:78px;text-align:left}.drug-btn b{display:block;font-size:18px}.drug-btn small{display:block;margin-top:4px;font-size:11px}
+
+/* Epinephrine 專用樣式與自訂倒數盒 */
+.med-card{border-left:6px solid var(--green)}
+.med-count{font-size:52px;color:var(--green);font-weight:800}
+.med-status{background:#eef5f7;padding:12px;border-radius:10px;margin:10px 0;color:#39566a}
+
+.epi-interval-selector{display:flex;align-items:center;gap:8px;margin-top:10px}
+.epi-interval-btn{padding:6px 12px;font-size:13px;border-radius:8px;border:1px solid #c8d5df;background:#f4f7fa;color:#173b56;cursor:pointer;font-weight:700}
+.epi-interval-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+
+.epi-timer-box{padding:14px 18px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;margin:12px 0;transition:all .3s}
+.epi-timer-box.counting{background:#eaf2fd;border:2px solid #90caf9;color:#104780}
+.epi-timer-box.due{background:#ffebee;border:2px solid #ef5350;color:#c62828;animation:pulseWarn 1s infinite alternate}
+
+/* Free Typing 輸入樣式 */
+.free-med-box{margin-top:14px;padding:16px;border:1px dashed #b9c9d6;border-radius:12px;background:#f8fbfd}
+.free-med-inputs{display:grid;grid-template-columns:2.5fr 1.5fr 1fr 2fr;gap:10px}
+.free-med-inputs input{padding:10px 12px;border:1px solid #c8d5df;border-radius:8px;font-size:14px;box-sizing:border-box;width:100%;background:#fff}
+.quick-med-tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+.quick-med-tags button{padding:5px 10px;font-size:12px;border-radius:6px;background:#e9f0f6;color:#1d466b;border:1px solid #cce0ee;cursor:pointer;font-weight:700}
+.quick-med-tags button:hover{background:#d5e7f5}
+
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.summary-item{background:#f4f7fa;border-radius:12px;padding:13px}.summary-item small{display:block;color:var(--muted)}.summary-item strong{font-size:20px}
+pre{background:#0e2234;color:#d8edf9;padding:16px;border-radius:12px;max-height:360px;overflow:auto;font-size:12px}
+
+/* 著作權與聲明專屬樣式 */
+.copyright-card{border:1px solid #cce0ef;background:#f0f6fb;color:#1c3d5a;border-radius:14px;padding:16px 20px;margin-bottom:16px;font-size:13px;line-height:1.7;position:relative}
+.copyright-card strong{color:#0d2c47}
+.footer{font-size:12px;color:#687d8e;background:#dfe8ef;border-radius:14px;padding:14px;line-height:1.7}
+.notice{background:#edf6ff;border:1px solid #c9e0f7;border-radius:12px;padding:12px;color:#24577c;margin-bottom:12px}
+@media(max-width:1000px){.two-col,.patient-grid,.status-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.free-med-inputs{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.rhythm-grid,.action-grid,.drug-grid,.summary-grid,.free-med-inputs{grid-template-columns:1fr}.timer .time{font-size:50px}.cycle-countdown-time{font-size:36px}}
+</style>
+
+<style>
+#timelineEventsWrap{scrollbar-width:thin}
+.medical-note-tools .gray{background:#e8eef3;color:#173b56;border:0;padding:10px 14px;border-radius:9px}
+#medicalNotePreview{display:none;visibility:visible!important;opacity:1!important;color:#173b56;background:#fff}
+</style>
+
+<meta name="theme-color" content="#123451">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="999 急救即時紀錄與品管系統">
+
+<style id="v49-responsive">
+html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+body { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+button, input, select, textarea { font-size: 16px; }
+button { min-height: 44px; touch-action: manipulation; }
+input, select, textarea { min-height: 44px; }
+img, svg { max-width: 100%; height: auto; }
+@media (max-width: 1100px) {
+  .two-col { grid-template-columns: 1fr !important; }
+  .patient-grid, .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .section-title { font-size: 18px !important; }
+}
+@media (max-width: 700px) {
+  body { margin: 0 !important; padding: 8px !important; }
+  .card, section { border-radius: 12px !important; }
+  .patient-grid, .status-grid, .two-col { grid-template-columns: 1fr !important; }
+  .section-title { font-size: 17px !important; line-height: 1.35 !important; }
+  button { min-height: 48px !important; padding: 10px 13px !important; }
+  .rhythm-grid, .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  #qiSummaryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  #timeline, #medicalNotePreview, #qiPauseList { max-width: 100%; overflow-x: auto; }
+}
+@media (max-width: 430px) {
+  .rhythm-grid, .action-grid, #qiSummaryGrid { grid-template-columns: 1fr !important; }
+  .section-title { font-size: 16px !important; }
+}
+</style>
+</head>
+<body>
+<div class="container" id="appContainer">
+
+<!-- 修正後的中文簡潔表頭與署名 -->
+<header style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+  <div>
+    <h1 style="margin:0;font-size:26px;letter-spacing:1px">999 急救即時紀錄與品管系統</h1>
+    <p style="margin:6px 0 0;opacity:.85;font-size:14px">ACLS 循環引擎 × 即時按壓中斷監測 × 事件歷程紀錄</p>
+  </div>
+  <div style="background:rgba(255,255,255,0.12);padding:8px 16px;border-radius:10px;font-size:15px;font-weight:700;border:1px solid rgba(255,255,255,0.2)">
+    專科護理師：曾妍鳳 製
+  </div>
+</header>
+
+<section class="card">
+<div class="page-label">急救啟動與即時狀態</div>
+<div class="patient-grid">
+<div class="info"><small>PATIENT ID</small><input id="patientIdInput" type="text" placeholder="請輸入病人 ID" style="width:100%;margin-top:6px;border:0;background:transparent;font-size:18px;font-weight:800;color:#102f4a;outline:none"></div>
+<div class="info"><small>LOCATION</small><input id="locationInput" type="text" placeholder="地點 / 床號" style="width:100%;margin-top:6px;border:0;background:transparent;font-size:18px;font-weight:800;color:#102f4a;outline:none"></div>
+<div class="info"><small>EVENT TYPE｜事件類型</small><strong>999 非預期急救事件</strong></div>
+</div>
+</section>
+
+<section class="card status-grid">
+<div class="info status"><small>SYSTEM STATUS</small><strong id="systemStatus">○ NOT STARTED</strong></div>
+<div class="info status"><small>CPR CYCLE</small><strong id="cycleDisplay">0</strong></div>
+<div class="info status"><small>CURRENT RHYTHM</small><strong id="rhythmDisplay">尚未評估</strong></div>
+<div class="info status"><small>CPR ELAPSED</small><strong id="elapsedDisplay">00:00</strong></div>
+</section>
+
+<section class="card live-state" id="liveStateCard">
+<div class="section-title">LIVE RESUSCITATION STATE</div>
+<div class="big" id="liveState">○ 尚未開始急救</div>
+<div class="sub" id="liveSub">等待 CPR START</div>
+</section>
+
+<div class="two-col">
+<!-- 左欄：計時器與常駐致死心律面板 -->
+<section class="card timer">
+<div class="section-title" style="color:white">CPR TOTAL ELAPSED TIME｜總 CPR 時間</div>
+<div class="time" id="mainTimer">00:00</div>
+<div class="hint" id="timerHint">尚未開始 CPR</div>
+
+<div class="notice" id="initialRhythmBox" style="margin-top:14px;background:#f8fafc;border:1px solid #d5e2ec">
+<strong style="color:#102f4a;font-size:16px">❤ RHYTHM SELECTION｜心律選擇與判讀</strong>
+<div id="rhythmHintSub" style="margin-top:4px;color:#5f7485;font-size:13px">CPR 開始前點選為「初始心律」；2分鐘到達時點選為「評估心律」；急救中可隨時人工變更。</div>
+
+<!-- 2 分鐘 Rhythm Check 評估橫幅（含按壓中斷即時警示） -->
+<div class="assessment normal" id="assessmentBox" style="margin-top:10px;padding:12px 14px">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div class="big" id="assessmentTitle" style="font-size:18px;font-weight:900">⚠ RHYTHM CHECK DUE</div>
+    <div style="font-size:24px;font-weight:900" id="assessmentTimer">00:00</div>
+  </div>
+  <div class="small" id="assessmentCycleText" style="font-weight:700;margin-top:4px">請停止按壓進行心律評估，並點選下方對應心律：</div>
+  <div id="pauseAlertNotice" style="font-size:12px;font-weight:800;margin-top:4px;display:none;color:#d32f2f">
+    🚨 注意：胸外按壓中斷已超過 10 秒（品質指標超標），請確認心律後儘速恢復按壓！
+  </div>
+</div>
+
+<div class="rhythm-grid" style="margin-top:10px">
+  <button class="rhythm-btn vf" onclick="handleRhythmClick('VF')"><b>⚡ VF</b><small>心室顫動</small></button>
+  <button class="rhythm-btn pvt" onclick="handleRhythmClick('pVT')"><b>⚡ pVT</b><small>無脈搏心室頻脈</small></button>
+  <button class="rhythm-btn pea" onclick="handleRhythmClick('PEA')"><b>○ PEA</b><small>無脈搏電氣活動</small></button>
+  <button class="rhythm-btn asy" onclick="handleRhythmClick('Asystole')"><b>— Asystole</b><small>心搏停止</small></button>
+  <button class="rhythm-btn other" style="grid-column: 1 / -1;" onclick="handleRhythmClick('Other')"><b>◇ Other</b><small>其他心律</small></button>
+</div>
+<div id="initialRhythmStatus" style="margin-top:8px;font-weight:800;color:#102f4a">目前心律：尚未輸入</div>
+</div>
+
+<div class="btn-row" style="margin-top:18px">
+<button class="primary" id="startBtn" onclick="startCPR()">▶ CPR START</button>
+<button class="green" id="nextCycleBtn" onclick="startNextCycle()" disabled>▶ 下一個 CPR 循環</button>
+<button class="danger" onclick="recordROSC()">❤ ROSC｜恢復循環</button>
+<button class="orange" onclick="openEndCPR()">■ 結束 CPR</button>
+<button class="neutral" onclick="resetAll()">↻ RESET</button>
+<button class="dark" id="testModeBtn" onclick="toggleTestMode()">🧪 測試模式：OFF</button>
+</div>
+<div id="endCprPanel" style="display:none;margin-top:14px;background:#fff4d7;border:2px solid #efca7a;border-radius:13px;padding:15px">
+<strong>確認結束 CPR</strong>
+<div style="margin-top:6px;color:#735400;font-size:13px">結束 CPR 不等同於 ROSC。請選擇停止原因：</div>
+<div class="cause-grid" style="margin-top:10px">
+<button onclick="confirmEndCPR('急救無效')">急救無效</button>
+<button onclick="confirmEndCPR('依醫療團隊判斷停止')">依醫療團隊判斷停止</button>
+<button onclick="confirmEndCPR('家屬／法定程序決定')">家屬／法定程序決定</button>
+<button onclick="confirmEndCPR('其他')">其他</button>
+</div>
+<button class="neutral" style="margin-top:10px" onclick="closeEndCPR()">取消</button>
+</div>
+</section>
+
+<!-- 右欄：整合 CPR Cycle Engine 與 Timeline -->
+<section class="card timeline">
+<div class="section-title">◷ 999 非預期急救事件 TIMELINE <span style="margin-left:auto;background:#102f4a;color:white;padding:7px 11px;border-radius:20px;font-size:12px" id="eventCount">0 EVENTS</span></div>
+
+<div class="integrated-cycle-box" id="cycleCountdownBox">
+  <div class="cycle-header-grid">
+    <div class="cycle-big-num" id="cycleBig">0</div>
+    <div>
+      <div style="font-weight:800;font-size:16px" id="cycleTitle">尚未開始</div>
+      <div class="progress"><div id="cycleProgress"></div></div>
+      <div style="font-size:12px;opacity:0.85" id="nextCheck">下一次心律評估：尚未開始</div>
+    </div>
+    <div>
+      <div style="font-size:11px;opacity:0.75;text-align:right">CYCLE COUNTDOWN</div>
+      <div class="cycle-countdown-time" id="cycleCountdown">02:00</div>
+    </div>
+  </div>
+  <div id="cycleCountdownHint" style="font-size:12px;margin-top:6px;opacity:0.9">等待 CPR START</div>
+</div>
+
+<div style="margin-top:10px;max-height:260px;overflow:auto" id="timelineEventsWrap"><div id="timeline"></div></div>
+</section>
+</div>
+
+<!-- Epinephrine 藥物治療卡片 -->
+<section class="card med-card">
+<div class="page-label">處置與事件紀錄</div>
+<div class="section-title">💊 DRUG THERAPY｜藥物治療｜Epinephrine</div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px">
+  <div style="display:flex;align-items:baseline;gap:8px">
+    <span class="med-count" id="epiCount">0</span> <strong style="font-size:20px;color:var(--text)">劑 (1 mg IV/IO)</strong>
+  </div>
+  <div class="epi-interval-selector">
+    <span style="font-size:12px;color:var(--muted);font-weight:800">下次倒數：</span>
+    <button class="epi-interval-btn active" id="epiIntBtn3" onclick="setEpiInterval(3)">3 分鐘</button>
+    <button class="epi-interval-btn" id="epiIntBtn4" onclick="setEpiInterval(4)">4 分鐘</button>
+    <button class="epi-interval-btn" id="epiIntBtn5" onclick="setEpiInterval(5)">5 分鐘</button>
+  </div>
+</div>
+
+<div class="med-status" id="epiStatus">尚未記錄 Epinephrine</div>
+
+<div id="epiTimerBox" class="epi-timer-box" style="display:none">
+  <div>
+    <strong id="epiTimerLabel" style="font-size:15px;display:block">下次建議給藥倒數</strong>
+    <span id="epiElapsedSub" style="font-size:12px;opacity:0.9">距離上次給藥已過 00:00</span>
+  </div>
+  <div style="text-align:right">
+    <div id="epiCountdownClock" style="font-size:34px;font-weight:900;letter-spacing:1px;line-height:1">03:00</div>
+    <div id="epiCountdownHint" style="font-size:12px;font-weight:800;margin-top:4px">穩定倒數中</div>
+  </div>
+</div>
+
+<button class="green" onclick="recordEpinephrine()" style="margin-top:8px">💉 記錄 Epinephrine 1 mg IV/IO</button>
+</section>
+
+<!-- 藥物治療專區：抗心律不整 + 自行輸入自由面板 (Free Typing) -->
+<section class="card">
+<div class="section-title">⚡ MEDICATIONS & FREE TYPING｜抗心律不整與其他急救藥物</div>
+<div id="antiarrhythmicPrompt" class="prompt">藥物按鍵開放人工點選；系統只負責記錄當時的時間與劑次，不自動判定給藥。</div>
+<div class="drug-grid" style="margin-top:12px">
+<button id="amioBtn" class="drug-btn purple" onclick="recordAdvancedDrug('Amiodarone')"><b>💊 Amiodarone｜胺碘酮</b><small>第一劑 300 mg bolus；第二劑 150 mg｜IV/IO</small></button>
+<button id="lidoBtn" class="drug-btn dark" onclick="recordAdvancedDrug('Lidocaine')"><b>💊 Lidocaine｜利多卡因</b><small>第一劑 1–1.5 mg/kg；第二劑 0.5–0.75 mg/kg｜IV/IO</small></button>
+</div>
+
+<!-- 自行輸入藥物面板 (Free Typing) -->
+<div class="free-med-box">
+  <div style="font-weight:800;font-size:15px;color:#102f4a;display:flex;align-items:center;justify-content:space-between">
+    <span>💊 其他急救／特殊藥物（自由輸入）</span>
+    <small style="color:var(--muted);font-weight:normal">點選快捷標籤或直接鍵入</small>
+  </div>
+  
+  <div class="quick-med-tags">
+    <button type="button" onclick="setQuickMed('Sodium Bicarbonate','50 mEq (1-2 amp)','IV')">NaHCO₃ (重碳酸鈉)</button>
+    <button type="button" onclick="setQuickMed('Calcium Gluconate','1 g (1 amp)','IV')">Calcium (葡萄糖酸鈣)</button>
+    <button type="button" onclick="setQuickMed('Magnesium Sulfate','1-2 g','IV/IO')">MgSO₄ (硫酸鎂)</button>
+    <button type="button" onclick="setQuickMed('Atropine','1 mg','IV')">Atropine</button>
+    <button type="button" onclick="setQuickMed('D50W','20-50 mL','IV')">D50W (高濃度葡萄糖)</button>
+    <button type="button" onclick="setQuickMed('Norepinephrine','8 mcg/min','IV drip')">Norepinephrine</button>
+  </div>
+
+  <div class="free-med-inputs">
+    <input id="customMedName" type="text" placeholder="藥物名稱 (例: NaHCO₃)">
+    <input id="customMedDose" type="text" placeholder="劑量 (例: 1 amp / 50mEq)">
+    <input id="customMedRoute" type="text" value="IV/IO" placeholder="途徑">
+    <input id="customMedNote" type="text" placeholder="備註 (例: 懷疑高血鉀 / 酸中毒)">
+  </div>
+  
+  <div class="btn-row" style="margin-top:10px">
+    <button class="primary" style="padding:10px 18px;font-size:14px" onclick="recordCustomMedication()">＋ 記錄此藥物</button>
+  </div>
+  <div id="customMedStatus" style="font-size:12px;color:var(--muted);margin-top:6px">已記錄的自訂藥物將忠實納入急救時間軸中</div>
+</div>
+
+<div id="antiarrhythmicHistory" style="margin-top:12px;color:#5f7485"></div>
+</section>
+
+<section class="card">
+<div class="section-title">🚨 EMERGENCY ACTIONS｜緊急處置</div>
+<div class="action-grid">
+<button class="danger" onclick="recordAction('Defibrillation','⚡ Defibrillation')">⚡ Defibrillation<small>電擊去顫｜Defibrillation</small><b style="display:block;margin-top:4px;font-size:14px">⚠ BIPHASIC：依設備設定</b></button>
+<button class="purple" onclick="openAirwayPanel()">🫁 Airway 建置<small>人工呼吸道型式｜Airway</small></button>
+<div id="airwayPanel" class="notice" style="display:none;grid-column:1/-1;margin-top:0">
+<strong>AIRWAY｜人工呼吸道型式</strong>
+<div class="btn-row" style="margin-top:10px">
+<button class="neutral" onclick="recordAirway('Endotracheal Tube','氣管內管')">Endotracheal｜氣管內管</button>
+<button class="neutral" onclick="recordAirway('Tracheal','氣切管')">Tracheal｜氣切管</button>
+<button class="neutral" onclick="recordAirway('LMA','喉罩')">LMA｜喉罩</button>
+<button class="neutral" onclick="closeAirwayPanel()">取消</button>
+</div>
+</div>
+<div class="etco2-inline" style="grid-column:1/-1;padding:14px 16px;border-radius:12px;background:#f7f9fb;border:1px solid #d8e0e7;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<strong style="font-size:18px">📈 ETCO₂｜自行輸入數值</strong>
+<input id="etco2Value" type="number" min="0" max="150" step="1" inputmode="numeric" placeholder="數值"
+style="width:150px;height:44px;padding:8px 12px;border:2px solid #7d8d99;border-radius:8px;background:#fff;font-size:20px;font-weight:700;box-sizing:border-box">
+<span style="font-weight:800">mmHg</span>
+<button class="primary" onclick="recordETCO2()">記錄 ETCO₂</button>
+<span id="etco2Status" class="small-status">可直接填寫數值</span>
+</div>
+</div>
+</section>
+
+<!-- ROSC & 品管摘要 放在 急救紀錄的上方 -->
+<section class="card">
+<div class="section-title">❤ ROSC & 品管摘要（QI Indicators）</div>
+<div class="summary-grid">
+<div class="summary-item"><small>ROSC 狀態</small><strong id="roscStatus">尚未發生</strong></div>
+<div class="summary-item"><small>總按壓中斷次數</small><strong id="totalPauseCount">0 次</strong></div>
+<div class="summary-item"><small style="color:#d32f2f">⚠ 壓胸中斷 ＞ 10 秒</small><strong id="pauseOver10Count" style="color:#d32f2f">0 次</strong></div>
+</div>
+</section>
+
+<!-- 急救紀錄區塊（支援 JSON、TXT 病程檔、CSV 品管報表下載） -->
+<section class="card">
+<div class="section-title">📋 RESUSCITATION RECORD & EXPORT｜急救紀錄與下載</div>
+<div class="notice">所有事件忠實依實際發生時序排列。支援匯出原始結構化 JSON、純文字病程紀錄（TXT）及品管分析試算表（CSV）。</div>
+<div id="unifiedRecord">尚無紀錄</div>
+
+<div class="btn-row" style="margin-top:14px">
+  <button class="primary" onclick="exportJSON()">📤 匯出 JSON 資料</button>
+  <button class="green" onclick="exportTXT()">📄 下載 TXT 病程紀錄</button>
+  <button class="dark" onclick="exportCSV()">📊 下載 CSV 品管報表</button>
+  <button class="neutral" onclick="showData()">🔎 檢視 JSON</button>
+</div>
+<pre id="dataViewer" style="display:none;margin-top:14px"></pre>
+
+<div class="medical-note-tools" style="margin-top:16px;padding-top:14px;border-top:1px solid #dce6ee">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <button class="primary" onclick="copyResuscitationNote()">📋 複製急救紀錄</button>
+    <button class="gray" onclick="previewResuscitationNote()">👁 預覽文字</button>
+    <span id="copyNoteStatus" class="small-status">可將時間序列紀錄直接複製至醫療文件</span>
+  </div>
+  <textarea id="medicalNotePreview" readonly
+    style="display:none;margin-top:12px;width:100%;min-height:220px;box-sizing:border-box;padding:12px;border:1px solid #c8d5df;border-radius:10px;font-family:inherit;font-size:14px;line-height:1.7;background:#fff"></textarea>
+</div>
+</section>
+
+<!-- 品質管理指標專區 (QI Dashboard) -->
+<section class="card" id="qiSummaryCard" style="display:none">
+  <div class="section-title">📊 CPR QUALITY SUMMARY｜CPR 品質與品管指標</div>
+  <div class="notice" style="background:#fff7e6;border:1px solid #ffd591;color:#873800">
+    <strong>品質指標說明：</strong>依 ACLS 指引，胸外按壓中斷（Compression Pause）應小於 10 秒。本區統計每一次 Rhythm Check 與處置之中斷時間，供品管覆盤與教學使用。
+  </div>
+  <div id="qiSummaryGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px"></div>
+  
+  <div style="margin-top:18px;border-top:1px solid #dce6ee;padding-top:16px">
+    <div style="font-weight:800;font-size:17px;color:#173b56">📈 CPR 品質視覺化</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px">
+      <div style="border:1px solid #dbe5ec;border-radius:12px;padding:14px;background:#fff">
+        <div style="font-weight:800;color:#173b56">ETCO₂ 趨勢</div>
+        <div style="font-size:12px;color:#71879a;margin:3px 0 8px">依實際記錄時間排列</div>
+        <div id="qiEtco2Chart" style="height:190px"></div>
+      </div>
+      <div style="border:1px solid #dbe5ec;border-radius:12px;padding:14px;background:#fff">
+        <div style="font-weight:800;color:#173b56">Compression Pause｜各 Cycle (紅柱 ＞10s)</div>
+        <div style="font-size:12px;color:#71879a;margin:3px 0 8px">紅色標示代表中斷超標（＞10 秒）</div>
+        <div id="qiPauseChart" style="height:190px"></div>
+      </div>
+    </div>
+    <div style="border:1px solid #dbe5ec;border-radius:12px;padding:14px;background:#fff;margin-top:14px">
+      <div style="font-weight:800;color:#173b56">急救處置事件統計</div>
+      <div style="font-size:12px;color:#71879a;margin:3px 0 8px">本次事件實際紀錄數量</div>
+      <div id="qiEventChart" style="height:190px"></div>
+    </div>
+  </div>
+  
+  <div style="margin-top:18px;font-weight:800;font-size:16px;color:#173b56">📋 胸外按壓中斷明細列表 (Compression Pause Log)</div>
+  <div id="qiPauseList" style="margin-top:8px"></div>
+</section>
+
+<!-- 【版權、原創與醫療免責聲明欄（防篡改核心節點）】 -->
+<section class="copyright-card" id="copyrightSection">
+  <strong>【智慧財產權、教案版權與免責聲明】</strong><br>
+  1. <strong id="copySignature">著作權與原創宣告：</strong>本軟體系統《999 急救即時紀錄與品管系統》之使用者介面架構、即時胸外按壓中斷（Compression Pause）品管演算法、Epinephrine 倒數引擎、SVG 數據圖表渲染邏輯及原始碼，著作權屬<strong>專科護理師 曾妍鳳</strong>所有。非經書面授權，禁止未經授權之商業重製、販售或抄襲。<br>
+  2. <strong>學術與臨床教學授權：</strong>本系統基於醫學教育與急救品管提升目的設計，遵循創用 CC 姓名標示-非商業性-相同方式分享（CC BY-NC-SA 4.0）精神，歡迎各醫療機構、大專院校護理系所作為臨床技能訓練、ACLS 模擬演練及學術專題研究使用，使用時請註明出處（製作者：曾妍鳳 專科護理師）。<br>
+  3. <strong>醫療免責聲明：</strong>本系統為急救輔助紀錄與教學模擬 Prototype，系統「不自動判讀心電圖、不自動判定適應症、不取代醫師處方醫囑」。實際急救處置與給藥劑量應依據最新 ACLS 指引、現場病患臨床徵象、各醫院急救 SOP 及醫療團隊專業臨床判斷為準。
+</section>
+
+<div class="footer">
+<strong>Prototype Notes：</strong>本系統主要提供 CPR／Cycle 計時、流程提示、人工心律輸入、藥物與處置事件紀錄及依 Cycle 資料整理功能，不取代院內急救流程或正式 EMR。<br>
+<strong>品管監測：</strong>系統自動計算 Chest Compression Pause 並即時/後台標示是否 ＞10 秒以供臨床品質指標（QI）審查。
+</div>
+</div>
+
+<script>
+/* ====================================================================
+   【防盜與防竄改安全核心模組 (Anti-Tamper & Security Engine)】
+   ==================================================================== */
+(function setupAntiTamper() {
+  document.addEventListener('contextmenu', e => {
+    e.preventDefault();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.keyCode === 123 || 
+       (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || 
+       (e.ctrlKey && e.keyCode === 85)) {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  window.verifySystemIntegrity = function() {
+    const card = document.getElementById("copyrightSection");
+    const sig = document.getElementById("copySignature");
+    const expected = "曾妍鳳";
+    
+    const isTampered = !card || !sig || 
+                       !card.textContent.includes(expected) || 
+                       window.getComputedStyle(card).display === "none" ||
+                       window.getComputedStyle(card).visibility === "hidden" ||
+                       card.offsetWidth === 0 || card.offsetHeight === 0;
+
+    if (isTampered) {
+      document.body.innerHTML = `
+        <div style="background:#102f4a;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:sans-serif">
+          <h1 style="color:#df4b4b;font-size:36px;margin-bottom:12px">⚠ 系統授權與版權完整性毀損</h1>
+          <p style="font-size:18px;max-width:600px;line-height:1.7;color:#d8e7f4">
+            偵測到底層原始版權宣告或開發者姓名（曾妍鳳 專科護理師）已被刪除、隱藏或竄改。<br>
+            依據智慧財產權防護機制，本急救引擎已全面鎖定停用。<br>
+            如需教學與臨床授權，請聯繫原始開發者取得正式版本。
+          </p>
+        </div>
+      `;
+      throw new Error("System execution halted due to license tampering.");
+    }
+    return true;
+  };
+
+  window.addEventListener('DOMContentLoaded', () => {
+    verifySystemIntegrity();
+    setInterval(verifySystemIntegrity, 3000);
+  });
+})();
+
+const rhythmDefinitions = {
+  VF: { label: "VF", chinese: "心室顫動", classification: "SHOCKABLE", pulse: "ABSENT" },
+  pVT: { label: "pVT", chinese: "無脈搏心室頻脈", classification: "SHOCKABLE", pulse: "ABSENT" },
+  PEA: { label: "PEA", chinese: "無脈搏電氣活動", classification: "NON-SHOCKABLE", pulse: "ABSENT" },
+  Asystole: { label: "Asystole", chinese: "心搏停止", classification: "NON-SHOCKABLE", pulse: "ABSENT" },
+  Other: { label: "Other", chinese: "其他心律", classification: "OTHER", pulse: "NOT SPECIFIED" }
+};
+
+let state = {
+  started: false, running: false, rosced: false, startTimestamp: null, cycleStartTimestamp: null,
+  elapsed: 0, cycle: 0, currentRhythm: null, initialRhythm: null, events: [], rhythmHistory: [],
+  epiCount: 0, lastEpiTimestamp: null, epiIntervalMinutes: 3,
+  nextCycleBoundary: 120, waitingRhythm: false, roscTimestamp: null, endCprTimestamp: null,
+  assessmentStartTimestamp: null, assessmentElapsed: 0, rhythmRecordedForCycle: false, nextCycleReady: false,
+  endCprReason: null, epiRecordingLock: false,
+  patient: { patientId: "", location: "" },
+  testMode: false
+};
+let timerHandle = null;
+
+const pad = n => String(n).padStart(2, "0");
+const formatTime = s => { s = Math.max(0, Math.floor(s)); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
+const formatElapsed = ms => formatTime(Math.max(0, Math.floor(ms / 1000)));
+const iso = () => new Date().toISOString();
+const displayClock = () => new Date().toLocaleTimeString("zh-TW", { hour12: false });
+const getCycleDuration = () => state.testMode ? 10 : 120;
+
+function toggleTestMode() {
+  if (state.started) {
+    alert("急救流程進行中無法切換測試模式。請重置後再設定。");
+    return;
+  }
+  state.testMode = !state.testMode;
+  const btn = document.getElementById("testModeBtn");
+  if (btn) {
+    btn.textContent = state.testMode ? "🧪 測試模式：ON (10s)" : "🧪 測試模式：OFF";
+    btn.style.background = state.testMode ? "#f2a927" : "#35536e";
+    btn.style.color = state.testMode ? "#172a3b" : "#fff";
+  }
+  const dur = getCycleDuration();
+  document.getElementById("cycleCountdown").textContent = formatTime(dur);
+}
+
+function setEpiInterval(min) {
+  state.epiIntervalMinutes = min;
+  [3, 4, 5].forEach(m => {
+    const btn = document.getElementById(`epiIntBtn${m}`);
+    if (btn) btn.classList.toggle("active", m === min);
+  });
+  updateEpiTimer();
+}
+
+function baseEvent(event, category, details = {}) {
+  const activeCycle = state.cycle;
+  return {
+    eventId: `EVT-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
+    event, category, actualTimestamp: iso(), displayTime: displayClock(),
+    cprElapsed: formatTime(state.elapsed), cprSeconds: state.elapsed,
+    cycle: activeCycle,
+    inPausePhase: state.waitingRhythm,
+    rhythm: state.currentRhythm || null,
+    rhythmChinese: state.currentRhythm ? rhythmDefinitions[state.currentRhythm].chinese : null,
+    details
+  };
+}
+
+function pushEvent(e) {
+  if (window.verifySystemIntegrity) window.verifySystemIntegrity();
+  state.events.push(e);
+  renderUnifiedRecord();
+}
+
+function startCPR() {
+  if (window.verifySystemIntegrity) window.verifySystemIntegrity();
+  if (state.started) return;
+  const now = Date.now();
+  state.started = true;
+  state.running = true;
+  state.rosced = false;
+  state.cycle = 1;
+  state.elapsed = 0;
+  state.startTimestamp = now;
+  state.cycleStartTimestamp = now;
+  state.nextCycleBoundary = getCycleDuration();
+  state.waitingRhythm = false;
+  state.currentRhythm = state.initialRhythm || null;
+  state.assessmentStartTimestamp = null;
+  state.assessmentElapsed = 0;
+  state.rhythmRecordedForCycle = false;
+  state.nextCycleReady = false;
+  state.endCprReason = null;
+
+  const rhythmDesc = state.currentRhythm ? ` (Initial Rhythm: ${state.currentRhythm})` : "";
+  pushEvent(baseEvent(`CPR START${rhythmDesc}`, "CPR", { cycle: 1, rhythm: state.currentRhythm }));
+  updateUI();
+  tick();
+}
+
+function updateEpiTimer() {
+  const box = document.getElementById("epiTimerBox");
+  if (!box) return;
+  if (!state.lastEpiTimestamp || state.epiCount === 0 || !state.started || state.rosced || state.endCprReason) {
+    box.style.display = "none";
+    return;
+  }
+  box.style.display = "flex";
+
+  const targetSec = state.epiIntervalMinutes * 60;
+  const elapsedSec = Math.max(0, Math.floor((Date.now() - state.lastEpiTimestamp) / 1000));
+  const remainSec = targetSec - elapsedSec;
+
+  const clockEl = document.getElementById("epiCountdownClock");
+  const hintEl = document.getElementById("epiCountdownHint");
+  const elapsedSub = document.getElementById("epiElapsedSub");
+
+  elapsedSub.textContent = `距離第 ${state.epiCount} 劑已過 ${formatTime(elapsedSec)}（設定 ${state.epiIntervalMinutes} 分鐘）`;
+
+  box.className = "epi-timer-box";
+  if (remainSec > 0) {
+    box.classList.add("counting");
+    clockEl.textContent = formatTime(remainSec);
+    hintEl.textContent = "⏱ 穩定倒數中";
+    hintEl.style.color = "#104780";
+  } else {
+    box.classList.add("due");
+    const overSec = Math.abs(remainSec);
+    clockEl.textContent = overSec > 0 ? `+${formatTime(overSec)}` : "00:00";
+    hintEl.textContent = "🚨 給藥時間到！請評估給予下一劑 Epi";
+    hintEl.style.color = "#c62828";
+  }
+}
+
+function updateTimerOnly() {
+  const total = formatTime(state.elapsed);
+  const timerEl = document.getElementById("mainTimer");
+  const elapsedEl = document.getElementById("elapsedDisplay");
+  if (timerEl) timerEl.textContent = total;
+  if (elapsedEl) elapsedEl.textContent = total;
+
+  const dur = getCycleDuration();
+  const cycleElapsed = state.running && state.cycleStartTimestamp && !state.waitingRhythm
+    ? Math.max(0, Math.floor((Date.now() - state.cycleStartTimestamp) / 1000))
+    : 0;
+  const remain = state.waitingRhythm ? 0 : Math.max(0, dur - cycleElapsed);
+
+  const cd = document.getElementById("cycleCountdown");
+  if (cd && !state.waitingRhythm) cd.textContent = formatTime(remain);
+
+  const nextCheck = document.getElementById("nextCheck");
+  if (nextCheck) {
+    nextCheck.textContent = state.running
+      ? (state.waitingRhythm
+          ? `Cycle ${state.cycle} 已完成｜等待心律確認`
+          : `下一次心律評估約 ${formatTime(remain)} 後`)
+      : "下一次心律評估：尚未開始";
+  }
+
+  const progress = document.getElementById("cycleProgress");
+  if (progress) {
+    const pct = state.cycle ? Math.min(100, Math.max(0, (cycleElapsed / dur) * 100)) : 0;
+    progress.style.width = pct + "%";
+  }
+
+  const hint = document.getElementById("cycleCountdownHint");
+  if (hint) {
+    hint.textContent = state.waitingRhythm
+      ? `⚠ Cycle ${state.cycle} 已完成｜請點選左側心律以推進下一輪。`
+      : state.rosced
+        ? "ROSC 結束 CPR Cycle Engine"
+        : state.endCprReason
+          ? "CPR 已結束"
+          : state.running
+            ? `Cycle ${state.cycle} 運作中｜完成後進入 Rhythm Check`
+            : "CPR START 後開始 Cycle 1";
+  }
+
+  updateEpiTimer();
+}
+
+function tick() {
+  clearInterval(timerHandle);
+  timerHandle = setInterval(() => {
+    if (!state.running || state.rosced || state.endCprReason) return;
+
+    const now = Date.now();
+    if (state.startTimestamp) {
+      state.elapsed = Math.max(0, Math.floor((now - state.startTimestamp) / 1000));
+    }
+
+    const dur = getCycleDuration();
+    if (!state.waitingRhythm && state.cycleStartTimestamp) {
+      const cycleElapsed = Math.max(0, Math.floor((now - state.cycleStartTimestamp) / 1000));
+      if (cycleElapsed >= dur) {
+        state.elapsed = Math.max(0, Math.floor((now - state.startTimestamp) / 1000));
+        enterRhythmCheck();
+        return;
+      }
+    }
+
+    if (state.waitingRhythm && state.assessmentStartTimestamp) {
+      state.assessmentElapsed = Math.max(0, Math.floor((now - state.assessmentStartTimestamp) / 1000));
+      const el = document.getElementById("assessmentTimer");
+      if (el) el.textContent = formatTime(state.assessmentElapsed);
+
+      const assessBox = document.getElementById("assessmentBox");
+      const notice = document.getElementById("pauseAlertNotice");
+      if (state.assessmentElapsed > 10) {
+        assessBox.classList.remove("normal");
+        assessBox.classList.add("overtime");
+        if (notice) notice.style.display = "block";
+      } else {
+        assessBox.classList.remove("overtime");
+        assessBox.classList.add("normal");
+        if (notice) notice.style.display = "none";
+      }
+    }
+
+    updateTimerOnly();
+  }, 250);
+}
+
+function enterRhythmCheck() {
+  if (state.waitingRhythm || state.rosced) return;
+  state.waitingRhythm = true;
+  state.assessmentStartTimestamp = Date.now();
+  state.assessmentElapsed = 0;
+
+  const assessBox = document.getElementById("assessmentBox");
+  assessBox.classList.remove("overtime");
+  assessBox.classList.add("normal");
+  document.getElementById("pauseAlertNotice").style.display = "none";
+
+  pushEvent(baseEvent(`CPR Cycle ${state.cycle} completed (2分鐘到達，停止按壓)`, "CPR_CYCLE", {
+    cycle: state.cycle, cycleDurationSeconds: getCycleDuration(),
+    status: "RHYTHM CHECK DUE"
+  }));
+  updateUI();
+}
+
+function handleRhythmClick(key) {
+  if (state.rosced || state.endCprReason) {
+    alert("本次 CPR 已結束，無法再輸入心律。");
+    return;
+  }
+  const r = rhythmDefinitions[key];
+
+  if (!state.started) {
+    state.initialRhythm = key;
+    state.currentRhythm = key;
+    const e = baseEvent(`Initial Rhythm：${r.label}`, "INITIAL_RHYTHM", {
+      rhythm: r.label, rhythmChinese: r.chinese, classification: r.classification,
+      pulseStatus: r.pulse, humanEntered: true
+    });
+    pushEvent(e);
+    updateUI();
+    return;
+  }
+
+  if (state.waitingRhythm) {
+    const completedCycle = state.cycle;
+    const assessmentTime = state.assessmentElapsed;
+    state.currentRhythm = key;
+
+    const e = baseEvent(`Rhythm Assessment：${r.label}｜${r.chinese}`, "RHYTHM", {
+      rhythm: r.label, rhythmChinese: r.chinese, classification: r.classification,
+      pulseStatus: r.pulse, assessmentForCycle: completedCycle,
+      assessmentTimeSeconds: assessmentTime, assessmentTime: formatTime(assessmentTime),
+      humanEntered: true
+    });
+    pushEvent(e);
+
+    state.rhythmRecordedForCycle = true;
+    state.nextCycleReady = true;
+
+    const nextBtn = document.getElementById("nextCycleBtn");
+    if (nextBtn) {
+      nextBtn.disabled = false;
+      nextBtn.textContent = `▶ 下一個 CPR 循環｜Cycle ${state.cycle + 1}`;
+    }
+  } else {
+    state.currentRhythm = key;
+    const e = baseEvent(`Rhythm Update：${r.label}｜${r.chinese}`, "RHYTHM_UPDATE", {
+      rhythm: r.label, rhythmChinese: r.chinese, classification: r.classification,
+      pulseStatus: r.pulse, humanEntered: true
+    });
+    pushEvent(e);
+  }
+  updateUI();
+}
+
+function startNextCycle() {
+  if (!state.started || state.rosced || state.endCprReason) return;
+  if (!state.rhythmRecordedForCycle || !state.nextCycleReady) {
+    alert("請先於左側點選本輪心律，再開始下一個 CPR 循環。");
+    return;
+  }
+
+  const previousCycle = state.cycle;
+  const pauseSeconds = Math.max(0, Math.floor(state.assessmentElapsed));
+  const currentR = state.currentRhythm;
+  const now = Date.now();
+  const dur = getCycleDuration();
+  const isOver10 = pauseSeconds > 10;
+
+  state.cycle = previousCycle + 1;
+  state.cycleStartTimestamp = now;
+  state.nextCycleBoundary = Math.floor((now - state.startTimestamp) / 1000) + dur;
+  state.waitingRhythm = false;
+  state.rhythmRecordedForCycle = false;
+  state.nextCycleReady = false;
+  state.assessmentStartTimestamp = null;
+  state.assessmentElapsed = 0;
+
+  const rhythmNotice = currentR ? ` (Rhythm: ${currentR})` : "";
+  pushEvent(baseEvent(`CPR Cycle ${state.cycle} started${rhythmNotice} (接續胸外按壓)`, "CPR_CYCLE", {
+    cycle: state.cycle,
+    previousCycle: previousCycle,
+    trigger: "manual_next_cycle_confirmation",
+    compressionPauseSeconds: pauseSeconds,
+    compressionPause: formatTime(pauseSeconds),
+    compressionPauseOver10Seconds: isOver10,
+    previousRhythm: currentR
+  }));
+
+  if (isOver10) {
+    pushEvent(baseEvent(`⚠ 按壓中斷超標 (Pause > 10s)：${pauseSeconds} 秒`, "QUALITY_INDICATOR", {
+      indicator: "Chest Compression Pause",
+      pauseSeconds: pauseSeconds,
+      thresholdSeconds: 10,
+      overThreshold: true,
+      cycle: previousCycle,
+      nextCycle: state.cycle
+    }));
+  }
+
+  updateUI();
+}
+
+function recordEpinephrine() {
+  if (!state.started || state.rosced || state.endCprReason || state.epiRecordingLock) return;
+  state.epiRecordingLock = true;
+  const btn = document.querySelector('button[onclick="recordEpinephrine()"]');
+  if (btn) { btn.disabled = true; btn.style.pointerEvents = "none"; }
+  
+  const now = Date.now();
+  const doseNumber = state.events.filter(x => x.category === "MEDICATION" && x.details?.medication === "Epinephrine").length + 1;
+  const r = state.currentRhythm ? rhythmDefinitions[state.currentRhythm] : null;
+  
+  state.epiCount = doseNumber;
+  state.lastEpiTimestamp = now;
+
+  pushEvent(baseEvent(`Epinephrine ${doseNumber}：1 mg IV/IO`, "MEDICATION", {
+    medication: "Epinephrine", dose: "1 mg", route: "IV/IO", doseNumber: doseNumber,
+    rhythm: r ? r.label : null, rhythmChinese: r ? r.chinese : null
+  }));
+  updateUI();
+  updateEpiTimer();
+
+  setTimeout(() => {
+    state.epiRecordingLock = false;
+    const b = document.querySelector('button[onclick="recordEpinephrine()"]');
+    if (b && state.started && !state.rosced && !state.endCprReason) {
+      b.disabled = false; b.style.pointerEvents = "auto";
+    }
+  }, 1500);
+}
+
+function setQuickMed(name, dose, route) {
+  document.getElementById("customMedName").value = name;
+  document.getElementById("customMedDose").value = dose;
+  document.getElementById("customMedRoute").value = route;
+}
+
+function recordCustomMedication() {
+  if (!state.started || state.rosced || state.endCprReason) {
+    alert("請先開始 CPR，且本次流程尚未結束。"); return; }
+  const name = document.getElementById("customMedName").value.trim();
+  const dose = document.getElementById("customMedDose").value.trim();
+  const route = document.getElementById("customMedRoute").value.trim();
+  const note = document.getElementById("customMedNote").value.trim();
+  if (!name) { alert("請輸入藥物名稱。"); return; }
+
+  const label = `藥物給予：${name}${dose ? " " + dose : ""}${route ? "｜" + route : ""}`;
+  pushEvent(baseEvent(label, "OTHER_MEDICATION", {
+    medication: name,
+    dose: dose || null,
+    route: route || null,
+    note: note || null,
+    humanEntered: true
+  }));
+
+  document.getElementById("customMedName").value = "";
+  document.getElementById("customMedDose").value = "";
+  document.getElementById("customMedRoute").value = "IV/IO";
+  document.getElementById("customMedNote").value = "";
+  document.getElementById("customMedStatus").textContent = `✓ 已記錄：${label}${note ? " (" + note + ")" : ""}`;
+  updateUI();
+}
+
+function recordETCO2() {
+  if (!state.started || state.rosced || state.endCprReason) {
+    alert("請先開始 CPR，且本次流程尚未結束。"); return;
+  }
+  const val = document.getElementById("etco2Value").value;
+  if (val === "") { alert("請輸入 ETCO₂ 數字。"); return; }
+  const label = `ETCO₂：${val} mmHg`;
+  pushEvent(baseEvent(label, "ETCO2", { etco2: Number(val), unit: "mmHg", humanEntered: true, machineRecommendation: false }));
+  document.getElementById("etco2Value").value = "";
+  document.getElementById("etco2Status").textContent = `✓ 已記錄：${label}`;
+  updateUI();
+}
+
+function qiFormatSec(sec) {
+  sec = Math.max(0, Math.round(Number(sec) || 0));
+  return `${pad(Math.floor(sec / 60))}:${pad(sec % 60)}`;
+}
+
+function qiSvgLineChart(containerId, points, yLabel, suffix) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!points.length) {
+    el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#8a9aaa">尚無資料</div>';
+    return;
+  }
+  const W = 620, H = 180, L = 48, R = 18, T = 14, B = 34;
+  const values = points.map(p => Number(p.value) || 0);
+  const max = Math.max(1, ...values), min = Math.min(0, ...values);
+  const x = i => L + (points.length === 1 ? (W - L - R) / 2 : i * (W - L - R) / (points.length - 1));
+  const y = v => T + (max - v) * (H - T - B) / (max - min || 1);
+  const path = points.map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p.value).toFixed(1)).join(" ");
+  const circles = points.map((p, i) => `<circle cx="${x(i)}" cy="${y(p.value)}" r="4" fill="#1976d2"><title>${p.label}：${p.value}${suffix}</title></circle>`).join("");
+  const labels = points.map((p, i) => `<text x="${x(i)}" y="${H - 10}" text-anchor="middle" font-size="11" fill="#71879a">${p.label}</text>`).join("");
+  const grid = [0, 0.5, 1].map(r => {
+    const yy = T + r * (H - T - B), val = (max - r * (max - min)).toFixed(0);
+    return `<line x1="${L}" y1="${yy}" x2="${W - R}" y2="${yy}" stroke="#e7edf2"/><text x="${L - 7}" y="${yy + 4}" text-anchor="end" font-size="10" fill="#8a9aaa">${val}${suffix}</text>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" role="img" aria-label="${yLabel}">${grid}<path d="${path}" fill="none" stroke="#1976d2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${circles}${labels}</svg>`;
+}
+
+function qiSvgBarChart(containerId, points, suffix, warnOver10) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!points.length) {
+    el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#8a9aaa">尚無資料</div>';
+    return;
+  }
+  const W = 620, H = 180, L = 42, R = 12, T = 12, B = 38;
+  const max = Math.max(12, ...points.map(p => Number(p.value) || 0));
+  const bw = Math.min(58, (W - L - R) / points.length * 0.55);
+  const gap = (W - L - R) / points.length;
+  
+  const y10 = H - B - (10 / max) * (H - T - B);
+  const line10 = `<line x1="${L}" y1="${y10}" x2="${W - R}" y2="${y10}" stroke="#d32f2f" stroke-dasharray="4" stroke-width="1.5"/><text x="${W - R}" y="${y10 - 4}" text-anchor="end" font-size="10" fill="#d32f2f">10s 閥值</text>`;
+
+  const bars = points.map((p, i) => {
+    const v = Math.max(0, Number(p.value) || 0), bh = (v / max) * (H - T - B);
+    const xx = L + i * gap + (gap - bw) / 2, yy = H - B - bh;
+    const warn = warnOver10 && v > 10;
+    return `<rect x="${xx}" y="${yy}" width="${bw}" height="${bh}" rx="5" fill="${warn ? '#d32f2f' : '#20a66a'}"><title>${p.label}：${v}${suffix}${warn ? '（超標 >10s）' : ''}</title></rect>
+      <text x="${xx + bw / 2}" y="${Math.max(T + 12, yy - 5)}" text-anchor="middle" font-size="11" font-weight="700" fill="${warn ? '#d32f2f' : '#173b56'}">${v}${suffix}</text>
+      <text x="${xx + bw / 2}" y="${H - 12}" text-anchor="middle" font-size="11" fill="#71879a">${p.label}</text>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" role="img">${bars}${line10}</svg>`;
+}
+
+function qiSvgEventChart(containerId, points) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const data = points.filter(p => Number(p.value) > 0);
+  if (!data.length) {
+    el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#8a9aaa">尚無處置事件資料</div>';
+    return;
+  }
+  const W = 620, H = 180, L = 42, R = 12, T = 12, B = 38;
+  const max = Math.max(1, ...data.map(p => Number(p.value) || 0));
+  const gap = (W - L - R) / data.length, bw = Math.min(58, gap * .55);
+  const bars = data.map((p, i) => {
+    const v = Number(p.value) || 0, bh = (v / max) * (H - T - B);
+    const xx = L + i * gap + (gap - bw) / 2, yy = H - B - bh;
+    return `<rect x="${xx}" y="${yy}" width="${bw}" height="${bh}" rx="5" fill="#2f80ed"><title>${p.label}：${v} 次</title></rect>
+      <text x="${xx + bw / 2}" y="${Math.max(T + 12, yy - 5)}" text-anchor="middle" font-size="11" fill="#173b56">${v}</text>
+      <text x="${xx + bw / 2}" y="${H - 12}" text-anchor="middle" font-size="11" fill="#71879a">${p.label}</text>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" role="img">${bars}</svg>`;
+}
+
+function getPauseEvents() {
+  return state.events.filter(x => x.category === "CPR_CYCLE" && x.details?.compressionPauseSeconds !== undefined)
+    .map(x => ({
+      cycle: x.details?.previousCycle ?? x.cycle,
+      pauseSeconds: Number(x.details?.compressionPauseSeconds) || 0,
+      timestamp: x.displayTime
+    }));
+}
+
+function getPauseOver10Count() {
+  return getPauseEvents().filter(x => x.pauseSeconds > 10).length;
+}
+
+function updateQICharts() {
+  const ev = state.events || [];
+  const etco2 = ev.filter(x => x.category === "ETCO2").map((x, i) => ({
+    label: x.displayTime || String(i + 1),
+    value: Number(x.details?.etco2 ?? x.etco2)
+  })).filter(x => Number.isFinite(x.value));
+  qiSvgLineChart("qiEtco2Chart", etco2, "ETCO₂", " mmHg");
+
+  const pause = getPauseEvents().map((x, i) => ({
+    label: `C${x.cycle ?? i + 1}`,
+    value: x.pauseSeconds
+  }));
+  qiSvgBarChart("qiPauseChart", pause, "s", true);
+
+  const countMed = (cat, name) => ev.filter(x => x.category === cat && x.details?.medication === name).length;
+  const cats = [
+    ["Defibrillation", ev.filter(x => x.category === "ACTION" && /^⚡\s*Defibrillation/.test(x.event || "")).length],
+    ["Epinephrine", countMed("MEDICATION", "Epinephrine")],
+    ["Amiodarone", countMed("ANTIARRHYTHMIC", "Amiodarone")],
+    ["Lidocaine", countMed("ANTIARRHYTHMIC", "Lidocaine")],
+    ["其他藥物", ev.filter(x => x.category === "OTHER_MEDICATION").length],
+    ["ETCO₂", ev.filter(x => x.category === "ETCO2").length]
+  ];
+  qiSvgEventChart("qiEventChart", cats.map(([label, value]) => ({ label, value })));
+}
+
+function updateQISummary() {
+  const card = document.getElementById("qiSummaryCard");
+  if (!card) return;
+
+  const ended = !!(state.rosced || state.endCprReason);
+  card.style.display = ended ? "block" : "none";
+  if (!ended) return;
+
+  const ev = state.events || [];
+  const cycleNumbers = ev.filter(x => x.category === "CPR_CYCLE" && /started|completed/.test(x.event || ""))
+    .map(x => Number(x.cycle)).filter(Number.isFinite);
+  const cycles = cycleNumbers.length ? Math.max(...cycleNumbers) : (state.cycle || 0);
+  const defibs = ev.filter(x => x.category === "ACTION" && /^⚡\s*Defibrillation/.test(x.event || "")).length;
+  const epis = ev.filter(x => x.category === "MEDICATION" && x.details?.medication === "Epinephrine").length;
+
+  let totalSec = 0;
+  if (state.startTimestamp) {
+    const endTs = state.roscTimestamp ? new Date(state.roscTimestamp).getTime()
+      : state.endCprTimestamp ? new Date(state.endCprTimestamp).getTime() : Date.now();
+    totalSec = Math.max(0, (endTs - state.startTimestamp) / 1000);
+  }
+
+  const pauseEvents = getPauseEvents();
+  const longPauses = pauseEvents.filter(x => x.pauseSeconds > 10);
+  const maxPause = pauseEvents.reduce((max, x) => Math.max(max, x.pauseSeconds), 0);
+  const avgPause = pauseEvents.length ? Math.round(pauseEvents.reduce((acc, x) => acc + x.pauseSeconds, 0) / pauseEvents.length) : 0;
+  const over10Rate = pauseEvents.length ? Math.round((longPauses.length / pauseEvents.length) * 100) : 0;
+
+  const grid = document.getElementById("qiSummaryGrid");
+  grid.innerHTML = [
+    ["CPR 總時間", qiFormatSec(totalSec)],
+    ["CPR 總 Cycle", cycles],
+    ["Defibrillation", defibs + " 次"],
+    ["Epinephrine", epis + " 劑"],
+    ["按壓中斷次數", pauseEvents.length + " 次"],
+    ["中斷 ＞10s (超標)", `<span style="color:#d32f2f">${longPauses.length} 次 (${over10Rate}%)</span>`],
+    ["平均中斷時間", `${avgPause} 秒`],
+    ["最長中斷時間", `<span style="color:${maxPause > 10 ? '#d32f2f' : 'inherit'}">${maxPause} 秒</span>`]
+  ].map(([k, v]) => `<div style="padding:12px;border:1px solid #dbe5ec;border-radius:10px;background:#f7fafc"><div style="font-size:12px;color:#71879a">${k}</div><div style="font-size:20px;font-weight:800;color:#173b56;margin-top:4px">${v}</div></div>`).join("");
+
+  const list = document.getElementById("qiPauseList");
+  if (!pauseEvents.length) {
+    list.innerHTML = '<div style="padding:10px;border-radius:9px;background:#f7fafc;color:#71879a">尚無 Compression Pause 紀錄</div>';
+  } else {
+    list.innerHTML = pauseEvents.map(x => {
+      const warn = x.pauseSeconds > 10;
+      return `<div style="padding:10px 14px;margin-top:6px;border-radius:9px;background:${warn ? '#fff1f0' : '#f6ffed'};border:1px solid ${warn ? '#ffa39e' : '#b7eb8f'};display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <strong>Cycle ${x.cycle ?? "-"}</strong>
+          <span style="color:#71879a;font-size:12px;margin-left:8px">${x.timestamp || ""}</span>
+        </div>
+        <div>
+          <span style="font-weight:900;font-size:16px;color:${warn ? '#cf1322' : '#389e0d'}">${x.pauseSeconds} 秒</span>
+          <span style="margin-left:10px;font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px;background:${warn ? '#ff4d4f' : '#52c41a'};color:#fff">${warn ? '⚠ 超標 (>10s)' : '✓ 符合標準 (≤10s)'}</span>
+        </div>
+      </div>`;
+    }).join("");
+  }
+}
+
+function buildMedicalNote() {
+  const p = state.patient || {};
+  const lines = ["999 非預期急救事件紀錄"];
+  lines.push("系統開發者：專科護理師 曾妍鳳");
+  if (p.patientId) lines.push(`Patient ID：${p.patientId}`);
+  if (p.location) lines.push(`Location：${p.location}`);
+  lines.push("");
+
+  (state.events || []).forEach(e => {
+    let line = `${e.displayTime || ""} ${e.event || ""}`;
+    if (e.cprElapsed) line += ` [CPR ${e.cprElapsed}]`;
+    if (e.cycle != null) line += ` [Cycle ${e.cycle}]`;
+    lines.push(line);
+  });
+
+  lines.push("");
+  lines.push("急救品質指標 (Quality Indicators)");
+  lines.push(`總 CPR 時間：${formatElapsed(state.startTimestamp ? Date.now() - state.startTimestamp : 0)}`);
+  lines.push(`CPR 總 Cycle：${state.cycle || 0}`);
+
+  const pauseEvents = getPauseEvents();
+  const longPauses = pauseEvents.filter(x => x.pauseSeconds > 10);
+  const maxPause = pauseEvents.reduce((max, x) => Math.max(max, x.pauseSeconds), 0);
+  const avgPause = pauseEvents.length ? Math.round(pauseEvents.reduce((acc, x) => acc + x.pauseSeconds, 0) / pauseEvents.length) : 0;
+
+  lines.push(`胸外按壓中斷次數：${pauseEvents.length} 次`);
+  lines.push(`按壓中斷 > 10 秒次數：${longPauses.length} 次 (${pauseEvents.length ? Math.round((longPauses.length / pauseEvents.length) * 100) : 0}%)`);
+  lines.push(`最長按壓中斷：${maxPause} 秒；平均中斷：${avgPause} 秒`);
+
+  const ev = state.events || [];
+  lines.push(`Defibrillation：${ev.filter(x => x.category === "ACTION" && /^⚡\s*Defibrillation/.test(x.event || "")).length} 次`);
+  lines.push(`Epinephrine：${ev.filter(x => x.category === "MEDICATION" && x.details?.medication === "Epinephrine").length} 次`);
+  
+  const customMeds = ev.filter(x => x.category === "OTHER_MEDICATION");
+  if (customMeds.length) {
+    lines.push(`其他急救藥物：${customMeds.map(x => x.event).join("；")}`);
+  }
+
+  const et = ev.filter(x => x.category === "ETCO2").map(x => x.details?.etco2 ?? x.etco2).filter(v => v !== undefined && v !== null && v !== "");
+  if (et.length) lines.push(`ETCO₂ 監測：${et.join(" → ")} mmHg`);
+
+  if (state.rosced) lines.push("結局：ROSC (恢復自發循環)");
+  else if (state.endCprReason) lines.push(`結局：結束 CPR｜原因：${state.endCprReason}`);
+
+  return lines.join("\n");
+}
+
+function copyResuscitationNote() {
+  const text = buildMedicalNote();
+  const done = () => {
+    const el = document.getElementById("copyNoteStatus");
+    if (el) el.textContent = "✓ 急救紀錄已複製，可直接貼至醫療文件";
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(() => {
+      const ta = document.getElementById("medicalNotePreview");
+      ta.style.display = "block"; ta.value = text; ta.select();
+      document.execCommand("copy"); done();
+    });
+  } else {
+    const ta = document.getElementById("medicalNotePreview");
+    ta.style.display = "block"; ta.value = text; ta.select();
+    document.execCommand("copy"); done();
+  }
+}
+
+function previewResuscitationNote() {
+  const ta = document.getElementById("medicalNotePreview");
+  if (!ta) return;
+  ta.value = buildMedicalNote();
+  ta.style.display = "block";
+  ta.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function exportTXT() {
+  const text = buildMedicalNote();
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const pid = (state.patient.patientId || "Patient").replace(/[^a-zA-Z0-9_-]/g, "");
+  a.download = `ACLS_Note_${pid}_${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportCSV() {
+  const pauses = getPauseEvents();
+  const headers = ["Cycle,時間戳記,按壓中斷秒數,是否超標(>10s),評估心律"];
+  const rows = pauses.map(p => {
+    const rhythmEvt = state.events.filter(e => e.cycle === p.cycle && ["INITIAL_RHYTHM", "RHYTHM", "RHYTHM_UPDATE"].includes(e.category)).slice(-1)[0];
+    const rhythm = rhythmEvt ? rhythmEvt.rhythm : "未記錄";
+    return `Cycle ${p.cycle},"${p.timestamp}",${p.pauseSeconds},${p.pauseSeconds > 10 ? "超標" : "合格"},"${rhythm}"`;
+  });
+
+  const csvContent = "\uFEFF" + headers.concat(rows).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const pid = (state.patient.patientId || "Patient").replace(/[^a-zA-Z0-9_-]/g, "");
+  a.download = `ACLS_QI_Report_${pid}_${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function openAirwayPanel() {
+  if (!state.started || state.rosced || state.endCprReason) { alert("請先開始 CPR，且本次流程尚未結束。"); return; }
+  document.getElementById("airwayPanel").style.display = "block";
+}
+function closeAirwayPanel() { document.getElementById("airwayPanel").style.display = "none"; }
+function recordAirway(type, chinese) {
+  if (!state.started || state.rosced || state.endCprReason) return;
+  pushEvent(baseEvent(`Airway：${type}｜${chinese}`, "AIRWAY", { airwayType: type, airwayChinese: chinese, humanEntered: true, machineRecommendation: false }));
+  closeAirwayPanel();
+  updateUI();
+}
+
+function updateMedicationPanel() {
+  const enabled = state.started && !state.rosced && !state.endCprReason;
+  document.getElementById("amioBtn").disabled = !enabled;
+  document.getElementById("lidoBtn").disabled = !enabled;
+
+  const prompt = document.getElementById("antiarrhythmicPrompt");
+  if (!state.started) {
+    prompt.textContent = "CPR START 後開放人工點選；系統負責事件紀錄。";
+  } else if (state.rosced) {
+    prompt.textContent = "ROSC 已記錄，停止本次 CPR 藥物事件輸入。";
+  } else if (state.endCprReason) {
+    prompt.textContent = "CPR 已結束，停止本次 CPR 藥物事件輸入。";
+  } else {
+    const r = state.currentRhythm ? rhythmDefinitions[state.currentRhythm] : null;
+    prompt.innerHTML = `藥物紀錄已開放｜目前心律：${r ? r.label : "尚未輸入"}｜系統不自動判定是否給藥。`;
+  }
+  document.getElementById("antiarrhythmicHistory").innerHTML = state.events
+    .filter(x => ["ANTIARRHYTHMIC", "OTHER_MEDICATION"].includes(x.category)).slice(-6).reverse()
+    .map(x => `<div>💊 ${x.event}｜${x.cprElapsed}｜Cycle ${x.cycle}${x.rhythm ? `｜Rhythm ${x.rhythm}` : ""}</div>`).join("");
+}
+
+function recordAdvancedDrug(drug) {
+  if (!state.started || state.rosced || state.endCprReason) return;
+  const previous = state.events.filter(x => x.category === "ANTIARRHYTHMIC" && x.details?.medication === drug).length;
+  const dose = drug === "Amiodarone" ? (previous === 0 ? "300 mg" : "150 mg") : "依體重與院內流程";
+  pushEvent(baseEvent(`${drug}｜${dose} IV/IO`, "ANTIARRHYTHMIC", {
+    medication: drug, dose, route: "IV/IO", doseNumber: previous + 1,
+    rhythm: state.currentRhythm, rhythmChinese: state.currentRhythm ? rhythmDefinitions[state.currentRhythm].chinese : null,
+    humanEntered: true, machineRecommendation: false
+  }));
+  updateUI();
+}
+
+function recordAction(type, label) {
+  if (!state.started || state.rosced) return;
+  let details = { action: type };
+  if (type === "Defibrillation") {
+    details.shockNumber = state.events.filter(x => x.category === "ACTION" && x.event.startsWith("⚡ Defibrillation")).length + 1;
+    details.rhythm = state.currentRhythm;
+    details.rhythmChinese = state.currentRhythm ? rhythmDefinitions[state.currentRhythm].chinese : null;
+    details.waveform = "BIPHASIC";
+  }
+  pushEvent(baseEvent(label, "ACTION", details));
+  updateUI();
+}
+
+function recordROSC() {
+  if (!state.started || state.rosced) return;
+  state.rosced = true; state.running = false; state.endCprReason = null;
+  state.roscTimestamp = iso();
+  if (state.waitingRhythm && state.assessmentStartTimestamp) {
+    state.assessmentElapsed = Math.floor((Date.now() - state.assessmentStartTimestamp) / 1000);
+  }
+  clearInterval(timerHandle);
+  pushEvent(baseEvent("ROSC (恢復自發循環)", "ROSC", { rosc: true, rosctime: state.roscTimestamp, totalCPRSeconds: state.elapsed, totalCycles: state.cycle, endedByUser: true }));
+  updateUI();
+  updateEpiTimer();
+}
+
+function resetAll() {
+  clearInterval(timerHandle);
+  state = {
+    started: false, running: false, rosced: false, startTimestamp: null, cycleStartTimestamp: null,
+    elapsed: 0, cycle: 0, currentRhythm: null, initialRhythm: null, events: [], rhythmHistory: [],
+    epiCount: 0, lastEpiTimestamp: null, epiIntervalMinutes: 3, nextCycleBoundary: 120, waitingRhythm: false, roscTimestamp: null, endCprTimestamp: null,
+    assessmentStartTimestamp: null, assessmentElapsed: 0, rhythmRecordedForCycle: false, nextCycleReady: false,
+    endCprReason: null, epiRecordingLock: false,
+    patient: { patientId: "", location: "" }, testMode: state.testMode
+  };
+  setEpiInterval(3);
+  document.getElementById("patientIdInput").value = "";
+  document.getElementById("locationInput").value = "";
+  document.getElementById("customMedName").value = "";
+  document.getElementById("customMedDose").value = "";
+  document.getElementById("customMedRoute").value = "IV/IO";
+  document.getElementById("customMedNote").value = "";
+  document.getElementById("dataViewer").style.display = "none";
+  document.getElementById("endCprPanel").style.display = "none";
+  updateUI();
+  updateEpiTimer();
+}
+
+function openEndCPR() {
+  if (!state.started || state.rosced) return;
+  document.getElementById("endCprPanel").style.display = "block";
+}
+function closeEndCPR() {
+  document.getElementById("endCprPanel").style.display = "none";
+}
+function confirmEndCPR(reason) {
+  if (!state.started || state.rosced) return;
+  state.rosced = false; state.running = false; state.endCprReason = reason; state.endCprTimestamp = iso();
+  clearInterval(timerHandle);
+  pushEvent(baseEvent("結束 CPR", "END_CPR", { endedByUser: true, reason, totalCPRSeconds: state.elapsed, totalCycles: state.cycle, lastRhythm: state.currentRhythm }));
+  closeEndCPR();
+  updateUI();
+  updateEpiTimer();
+}
+
+function renderUnifiedRecord() {
+  const box = document.getElementById("unifiedRecord");
+  if (!box) return;
+  if (!state.events.length) { box.textContent = "尚無紀錄"; return; }
+
+  const sorted = state.events.slice().sort((a, b) => new Date(a.actualTimestamp) - new Date(b.actualTimestamp));
+
+  const groups = {};
+  sorted.forEach(e => {
+    const c = e.cycle || 0;
+    if (!groups[c]) groups[c] = [];
+    groups[c].push(e);
+  });
+
+  const cycles = Object.keys(groups).map(Number).sort((a, b) => a - b);
+
+  box.innerHTML = cycles.map(c => {
+    const list = groups[c];
+    const pauseEvt = list.find(e => e.details && e.details.compressionPauseSeconds !== undefined);
+    const lastRhythmEvt = list.filter(e => ["INITIAL_RHYTHM", "RHYTHM", "RHYTHM_UPDATE"].includes(e.category)).slice(-1)[0];
+
+    return `<div style="border:1px solid #dce6ed;border-radius:14px;margin:12px 0;overflow:hidden;background:#fff">
+      <div style="background:#f1f6fa;padding:12px 14px;font-weight:900;border-bottom:1px solid #e2ebf0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div>
+          <span style="font-size:16px;color:#102f4a">${c === 0 ? "急救啟動前" : `CPR Cycle ${c}`}</span>
+          ${lastRhythmEvt ? `<span style="margin-left:8px;font-size:13px;color:#185394">｜心律：${lastRhythmEvt.rhythm || ""}</span>` : ""}
+        </div>
+        ${pauseEvt ? `<div>
+          <span style="font-size:13px">按壓中斷：<b>${pauseEvt.details.compressionPauseSeconds} 秒</b></span>
+          ${pauseEvt.details.compressionPauseOver10Seconds ? '<span style="color:#d32f2f;font-weight:900;margin-left:6px">⚠ ＞10s (超標)</span>' : '<span style="color:#389e0d;font-weight:800;margin-left:6px">✓ ≤10s</span>'}
+        </div>` : ""}
+      </div>
+      <div style="padding:6px 16px">
+        ${list.map(e => `
+          <div class="event">
+            <div class="event-time">${e.cprElapsed}</div>
+            <div class="event-main">
+              <strong>${e.event}</strong>
+              <span>${e.displayTime}${e.inPausePhase ? "｜[評估/中斷期間執行]" : ""}${e.category === "QUALITY_INDICATOR" ? "｜品管監測" : ""}</span>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+document.getElementById("patientIdInput")?.addEventListener("input", e => {
+  if (!state.patient) state.patient = {};
+  state.patient.patientId = e.target.value;
+});
+document.getElementById("locationInput")?.addEventListener("input", e => {
+  if (!state.patient) state.patient = {};
+  state.patient.location = e.target.value;
+});
+
+function updateUI() {
+  updateQISummary();
+  updateQICharts();
+  const ended = !!state.endCprReason;
+  const status = state.rosced ? "❤ ROSC" : ended ? "■ CPR ENDED" : state.running ? (state.waitingRhythm ? "⚠ RHYTHM CHECK" : "● CPR IN PROGRESS") : "○ NOT STARTED";
+  document.getElementById("systemStatus").textContent = status;
+  document.getElementById("cycleDisplay").textContent = state.cycle;
+  document.getElementById("cycleBig").textContent = state.cycle;
+  document.getElementById("elapsedDisplay").textContent = formatTime(state.elapsed);
+  document.getElementById("mainTimer").textContent = formatTime(state.elapsed);
+
+  const curDef = state.currentRhythm ? rhythmDefinitions[state.currentRhythm] : null;
+  document.getElementById("initialRhythmStatus").textContent = curDef ? `✓ 目前心律：${curDef.label}｜${curDef.chinese}` : "目前心律：尚未輸入";
+  document.getElementById("rhythmDisplay").textContent = curDef ? curDef.label : "尚未評估";
+  
+  state.epiCount = state.events.filter(x => x.category === "MEDICATION" && x.details?.medication === "Epinephrine").length;
+  document.getElementById("epiCount").textContent = state.epiCount;
+  document.getElementById("eventCount").textContent = `${state.events.length} EVENTS`;
+
+  const pauseEvents = getPauseEvents();
+  const over10Count = getPauseOver10Count();
+  document.getElementById("totalPauseCount").textContent = `${pauseEvents.length} 次`;
+  document.getElementById("pauseOver10Count").textContent = `${over10Count} 次`;
+
+  document.getElementById("roscStatus").textContent = state.rosced ? "已發生" : ended ? "未發生｜CPR 已結束" : "尚未發生";
+
+  document.getElementById("liveState").textContent =
+    state.rosced ? "❤ 已達 ROSC" :
+    ended ? "■ CPR 已結束" :
+    state.waitingRhythm ? "⚠ RHYTHM CHECK｜心律評估中" :
+    state.running ? "● CPR 進行中" : "○ 尚未開始急救";
+
+  document.getElementById("liveSub").textContent =
+    state.rosced ? "已恢復自發性循環" :
+    ended ? `CPR 流程已結束｜原因：${state.endCprReason}` :
+    state.waitingRhythm ? `Cycle ${state.cycle} 已完成 CPR｜等待點選心律` :
+    state.running ? `目前 Cycle ${state.cycle}｜CPR 持續計時` : "等待 CPR START";
+
+  document.getElementById("timerHint").textContent =
+    state.rosced ? "ROSC 已記錄" :
+    ended ? "CPR 已結束" :
+    state.waitingRhythm ? "CPR 倒數暫停｜請點選心律" :
+    state.running ? "持續 CPR 中" : "尚未開始 CPR";
+
+  document.getElementById("cycleTitle").textContent = state.cycle ? `Cycle ${state.cycle}` : "尚未開始";
+
+  const dur = getCycleDuration();
+  const cycleElapsed = state.running && state.cycleStartTimestamp && !state.waitingRhythm
+    ? Math.max(0, Math.floor((Date.now() - state.cycleStartTimestamp) / 1000)) : 0;
+  const remain = state.waitingRhythm ? 0 : Math.max(0, dur - cycleElapsed);
+
+  document.getElementById("nextCheck").textContent =
+    state.running ? (state.waitingRhythm ? `Cycle ${state.cycle} 已完成｜請確認心律` : `下一次心律評估約 ${formatTime(remain)} 後`) : "下一次心律評估：尚未開始";
+
+  const pct = state.cycle ? Math.min(100, Math.max(0, (cycleElapsed / dur) * 100)) : 0;
+  document.getElementById("cycleProgress").style.width = pct + "%";
+
+  const cdBox = document.getElementById("cycleCountdownBox");
+  if (state.waitingRhythm) {
+    cdBox.classList.add("waiting");
+    document.getElementById("cycleCountdown").textContent = "00:00";
+    document.getElementById("cycleCountdownHint").textContent = "⚠ RHYTHM CHECK｜請在左側點選心律後，按「下一個 CPR 循環」";
+  } else {
+    cdBox.classList.remove("waiting");
+    document.getElementById("cycleCountdown").textContent = formatTime(remain);
+    document.getElementById("cycleCountdownHint").textContent =
+      state.running ? "CPR 進行中｜完成後進入 Rhythm Check" :
+      state.rosced ? "ROSC｜CPR 結束" :
+      ended ? "CPR 已結束" : "等待 CPR START";
+  }
+
+  const assess = document.getElementById("assessmentBox");
+  assess.classList.toggle("show", state.waitingRhythm);
+  document.getElementById("assessmentCycleText").textContent = state.waitingRhythm ? `Cycle ${state.cycle} 已完成 CPR，請點選下方心律：` : "";
+  document.getElementById("assessmentTimer").textContent = formatTime(state.assessmentElapsed);
+
+  if (state.epiCount === 0) {
+    document.getElementById("epiStatus").textContent = "尚未記錄 Epinephrine";
+  } else {
+    const last = state.events.filter(x => x.category === "MEDICATION" && x.details?.medication === "Epinephrine").slice(-1)[0];
+    document.getElementById("epiStatus").textContent = `最近一次：${last.displayTime}｜CPR ${last.cprElapsed}｜Cycle ${last.cycle}`;
+  }
+
+  document.getElementById("startBtn").disabled = state.started;
+  const nextBtn = document.getElementById("nextCycleBtn");
+  nextBtn.disabled = !(state.nextCycleReady && !state.rosced && !ended);
+  nextBtn.textContent = state.nextCycleReady ? `▶ 下一個 CPR 循環｜Cycle ${state.cycle + 1}` : "▶ 下一個 CPR 循環";
+
+  const rhythmBtnsEnabled = !state.rosced && !ended;
+  document.querySelectorAll("#initialRhythmBox .rhythm-btn").forEach(btn => btn.disabled = !rhythmBtnsEnabled);
+
+  renderUnifiedRecord(); 
+  updateMedicationPanel();
+  updateEpiTimer();
+}
+
+function buildExport() {
+  const pauseEvents = getPauseEvents();
+  const longPauses = pauseEvents.filter(x => x.pauseSeconds > 10);
+  const maxPause = pauseEvents.reduce((max, x) => Math.max(max, x.pauseSeconds), 0);
+  const avgPause = pauseEvents.length ? Math.round(pauseEvents.reduce((acc, x) => acc + x.pauseSeconds, 0) / pauseEvents.length) : 0;
+
+  return {
+    system: "999 急救即時紀錄與品管系統",
+    author: "專科護理師 曾妍鳳",
+    version: "V4.9-Protected",
+    license: "CC BY-NC-SA 4.0 / Educational & Clinical Quality Use",
+    generatedAt: iso(),
+    patient: state.patient,
+    resuscitationState: {
+      started: state.started, rosced: state.rosced,
+      elapsedSeconds: state.elapsed, currentCycle: state.cycle,
+      initialRhythm: state.initialRhythm, currentRhythm: state.currentRhythm,
+      humanRhythmAssessment: true, machineRhythmInterpretation: false,
+      cycleDurationSeconds: getCycleDuration(),
+      termination: state.rosced ? "ROSC" : state.endCprReason ? "END_CPR" : "ACTIVE",
+      endCprReason: state.endCprReason, currentAssessmentElapsedSeconds: state.assessmentElapsed
+    },
+    qualityIndicators: {
+      totalChestCompressionPauses: pauseEvents.length,
+      pausesOver10Seconds: longPauses.length,
+      complianceRate: pauseEvents.length ? `${Math.round(((pauseEvents.length - longPauses.length) / pauseEvents.length) * 100)}%` : "100%",
+      maxPauseSeconds: maxPause,
+      averagePauseSeconds: avgPause,
+      pauseDetails: pauseEvents
+    },
+    rhythmHistory: state.rhythmHistory,
+    epinephrineCount: state.epiCount,
+    events: state.events
+  };
+}
+
+function exportJSON() {
+  if (window.verifySystemIntegrity) window.verifySystemIntegrity();
+  const blob = new Blob([JSON.stringify(buildExport(), null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const pid = (state.patient.patientId || "Patient").replace(/[^a-zA-Z0-9_-]/g, "");
+  a.download = `ACLS_999_${pid}_${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function showData() {
+  const pre = document.getElementById("dataViewer");
+  pre.style.display = pre.style.display === "none" ? "block" : "none";
+  pre.textContent = JSON.stringify(buildExport(), null, 2);
+}
+
+updateUI();
+</script>
+</body>
+</html>
