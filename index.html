@@ -1,3 +1,10 @@
+<!--
+====================================================================
+Copyright (c) 2026 曾妍鳳. All Rights Reserved.
+專利與著作權保護：999 急救即時紀錄與品管系統｜ACLS CPR Workflow Engine
+設計與製作：專科護理師 曾妍鳳
+====================================================================
+-->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -28,7 +35,10 @@ button:disabled{opacity:.42;cursor:not-allowed}
 
 /* 整合版 Timeline 與 CPR Cycle Engine */
 .timeline{min-height:245px;max-height:560px;overflow:auto}
-.integrated-cycle-box{background:#102f4a;color:#fff;border-radius:15px;padding:16px 20px;margin-bottom:12px}
+.integrated-cycle-box{background:#102f4a;color:#fff;border-radius:15px;padding:16px 20px;margin-bottom:12px;transition:all .3s}
+.integrated-cycle-box.warning10{background:#ff9800!important;color:#fff!important;border:3px solid #e65100!important;animation:pulseWarn 0.8s infinite alternate}
+.integrated-cycle-box.warning10 .cycle-big-num{color:#fff!important}
+.integrated-cycle-box.warning10 .cycle-countdown-time{color:#fff!important}
 .integrated-cycle-box.waiting{background:#fff1d5;color:#704d00;border:2px solid #efca7a}
 .integrated-cycle-box.waiting .time{color:#c25a1a}
 .cycle-header-grid{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center}
@@ -37,6 +47,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .progress{height:10px;background:#234460;border-radius:20px;overflow:hidden;margin:8px 0}
 .integrated-cycle-box.waiting .progress{background:#e2cfa2}
 .progress>div{height:100%;background:var(--blue);width:0%;transition:width .2s}
+.integrated-cycle-box.warning10 .progress>div{background:#fff!important}
 .integrated-cycle-box.waiting .progress>div{background:#c25a1a}
 .cycle-countdown-time{font-size:46px;font-weight:900;letter-spacing:2px;text-align:right;line-height:1}
 
@@ -58,7 +69,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .assessment.show{display:block}
 .assessment.normal{background:#e8f4fd;border:2px solid #90caf9;color:#0d47a1}
 .assessment.overtime{background:#ffebee;border:2px solid #ef5350;color:#b71c1c;animation:pulseWarn 1s infinite alternate}
-@keyframes pulseWarn { from { transform: scale(1); } to { transform: scale(1.015); } }
+@keyframes pulseWarn { from { transform: scale(1); box-shadow: 0 0 0 rgba(223,75,75,0); } to { transform: scale(1.015); box-shadow: 0 0 16px rgba(223,75,75,0.45); } }
 
 .prompt{background:#fff4d7;border:1px solid #f1d184;color:#735400;border-radius:12px;padding:12px;margin-top:12px;font-weight:700}
 .action-grid,.drug-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.action-grid button{min-height:58px}.action-grid button small{display:block;margin-top:4px;font-size:11px;font-weight:600;opacity:.9}
@@ -75,6 +86,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
 
 .epi-timer-box{padding:14px 18px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;margin:12px 0;transition:all .3s}
 .epi-timer-box.counting{background:#eaf2fd;border:2px solid #90caf9;color:#104780}
+.epi-timer-box.warning10{background:#fff8e1;border:2px solid #ffb300;color:#b26a00;animation:pulseWarn 0.8s infinite alternate}
 .epi-timer-box.due{background:#ffebee;border:2px solid #ef5350;color:#c62828;animation:pulseWarn 1s infinite alternate}
 
 /* Free Typing 輸入樣式 */
@@ -141,7 +153,6 @@ img, svg { max-width: 100%; height: auto; }
 <body>
 <div class="container" id="appContainer">
 
-<!-- 修正後的中文簡潔表頭與署名 -->
 <header style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
   <div>
     <h1 style="margin:0;font-size:26px;letter-spacing:1px">999 急救即時紀錄與品管系統</h1>
@@ -601,11 +612,16 @@ function updateEpiTimer() {
   elapsedSub.textContent = `距離第 ${state.epiCount} 劑已過 ${formatTime(elapsedSec)}（設定 ${state.epiIntervalMinutes} 分鐘）`;
 
   box.className = "epi-timer-box";
-  if (remainSec > 0) {
+  if (remainSec > 10) {
     box.classList.add("counting");
     clockEl.textContent = formatTime(remainSec);
     hintEl.textContent = "⏱ 穩定倒數中";
     hintEl.style.color = "#104780";
+  } else if (remainSec > 0 && remainSec <= 10) {
+    box.classList.add("warning10");
+    clockEl.textContent = formatTime(remainSec);
+    hintEl.textContent = "🔔 倒數 10 秒！請預備抽取下一劑 Epinephrine";
+    hintEl.style.color = "#b26a00";
   } else {
     box.classList.add("due");
     const overSec = Math.abs(remainSec);
@@ -631,12 +647,27 @@ function updateTimerOnly() {
   const cd = document.getElementById("cycleCountdown");
   if (cd && !state.waitingRhythm) cd.textContent = formatTime(remain);
 
+  const cdBox = document.getElementById("cycleCountdownBox");
+  if (cdBox) {
+    if (state.waitingRhythm) {
+      cdBox.classList.remove("warning10");
+      cdBox.classList.add("waiting");
+    } else if (state.running && remain <= 10 && remain > 0) {
+      cdBox.classList.remove("waiting");
+      cdBox.classList.add("warning10");
+    } else {
+      cdBox.classList.remove("waiting", "warning10");
+    }
+  }
+
   const nextCheck = document.getElementById("nextCheck");
   if (nextCheck) {
     nextCheck.textContent = state.running
       ? (state.waitingRhythm
           ? `Cycle ${state.cycle} 已完成｜等待心律確認`
-          : `下一次心律評估約 ${formatTime(remain)} 後`)
+          : (remain <= 10 && remain > 0
+              ? `⚠ 評估預備：倒數 ${remain} 秒進行心律判讀！`
+              : `下一次心律評估約 ${formatTime(remain)} 後`))
       : "下一次心律評估：尚未開始";
   }
 
@@ -654,9 +685,11 @@ function updateTimerOnly() {
         ? "ROSC 結束 CPR Cycle Engine"
         : state.endCprReason
           ? "CPR 已結束"
-          : state.running
-            ? `Cycle ${state.cycle} 運作中｜完成後進入 Rhythm Check`
-            : "CPR START 後開始 Cycle 1";
+          : (remain <= 10 && remain > 0)
+            ? "🔔 剩餘 10 秒！請除顫人員就位並預備換手按壓"
+            : state.running
+              ? `Cycle ${state.cycle} 運作中｜完成後進入 Rhythm Check`
+              : "CPR START 後開始 Cycle 1";
   }
 
   updateEpiTimer();
@@ -1390,19 +1423,33 @@ function updateUI() {
     ? Math.max(0, Math.floor((Date.now() - state.cycleStartTimestamp) / 1000)) : 0;
   const remain = state.waitingRhythm ? 0 : Math.max(0, dur - cycleElapsed);
 
-  document.getElementById("nextCheck").textContent =
-    state.running ? (state.waitingRhythm ? `Cycle ${state.cycle} 已完成｜請確認心律` : `下一次心律評估約 ${formatTime(remain)} 後`) : "下一次心律評估：尚未開始";
+  const nextCheck = document.getElementById("nextCheck");
+  if (nextCheck) {
+    nextCheck.textContent = state.running
+      ? (state.waitingRhythm
+          ? `Cycle ${state.cycle} 已完成｜請確認心律`
+          : (remain <= 10 && remain > 0
+              ? `⚠ 評估預備：倒數 ${remain} 秒進行心律判讀！`
+              : `下一次心律評估約 ${formatTime(remain)} 後`))
+      : "下一次心律評估：尚未開始";
+  }
 
   const pct = state.cycle ? Math.min(100, Math.max(0, (cycleElapsed / dur) * 100)) : 0;
   document.getElementById("cycleProgress").style.width = pct + "%";
 
   const cdBox = document.getElementById("cycleCountdownBox");
   if (state.waitingRhythm) {
+    cdBox.classList.remove("warning10");
     cdBox.classList.add("waiting");
     document.getElementById("cycleCountdown").textContent = "00:00";
     document.getElementById("cycleCountdownHint").textContent = "⚠ RHYTHM CHECK｜請在左側點選心律後，按「下一個 CPR 循環」";
-  } else {
+  } else if (state.running && remain <= 10 && remain > 0) {
     cdBox.classList.remove("waiting");
+    cdBox.classList.add("warning10");
+    document.getElementById("cycleCountdown").textContent = formatTime(remain);
+    document.getElementById("cycleCountdownHint").textContent = "🔔 剩餘 10 秒！請除顫人員就位並預備換手按壓";
+  } else {
+    cdBox.classList.remove("waiting", "warning10");
     document.getElementById("cycleCountdown").textContent = formatTime(remain);
     document.getElementById("cycleCountdownHint").textContent =
       state.running ? "CPR 進行中｜完成後進入 Rhythm Check" :
