@@ -1,10 +1,3 @@
-<!--
-====================================================================
-Copyright (c) 2026 曾妍鳳. All Rights Reserved.
-專利與著作權保護：999 急救即時紀錄與品管系統｜ACLS CPR Workflow Engine
-設計與製作：專科護理師 曾妍鳳
-====================================================================
--->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -89,6 +82,14 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .epi-timer-box.warning10{background:#fff8e1;border:2px solid #ffb300;color:#b26a00;animation:pulseWarn 0.8s infinite alternate}
 .epi-timer-box.due{background:#ffebee;border:2px solid #ef5350;color:#c62828;animation:pulseWarn 1s infinite alternate}
 
+/* 神經意識與體徵評估面板 (Neuro Grid) */
+.neuro-container{display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;background:#f8fafc;padding:16px;border-radius:14px;border:1px solid #dbe6ef}
+.neuro-block{background:#fff;padding:14px;border-radius:12px;border:1px solid #dce6ed}
+.neuro-block-title{font-size:15px;font-weight:800;color:#102f4a;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.neuro-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.neuro-row label{width:65px;font-size:13px;font-weight:700;color:#4a6375}
+.neuro-row select{flex:1;padding:8px 10px;border-radius:8px;border:1px solid #ccd8e2;background:#fff;font-size:13px;font-weight:700;color:#17324a;outline:none}
+
 /* Free Typing 輸入樣式 */
 .free-med-box{margin-top:14px;padding:16px;border:1px dashed #b9c9d6;border-radius:12px;background:#f8fbfd}
 .free-med-inputs{display:grid;grid-template-columns:2.5fr 1.5fr 1fr 2fr;gap:10px}
@@ -105,6 +106,7 @@ pre{background:#0e2234;color:#d8edf9;padding:16px;border-radius:12px;max-height:
 .copyright-card strong{color:#0d2c47}
 .footer{font-size:12px;color:#687d8e;background:#dfe8ef;border-radius:14px;padding:14px;line-height:1.7}
 .notice{background:#edf6ff;border:1px solid #c9e0f7;border-radius:12px;padding:12px;color:#24577c;margin-bottom:12px}
+@media(max-width:1100px){.neuro-container{grid-template-columns:1fr}}
 @media(max-width:1000px){.two-col,.patient-grid,.status-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.free-med-inputs{grid-template-columns:1fr 1fr}}
 @media(max-width:650px){.rhythm-grid,.action-grid,.drug-grid,.summary-grid,.free-med-inputs{grid-template-columns:1fr}.timer .time{font-size:50px}.cycle-countdown-time{font-size:36px}}
@@ -262,6 +264,180 @@ img, svg { max-width: 100%; height: auto; }
 <div style="margin-top:10px;max-height:260px;overflow:auto" id="timelineEventsWrap"><div id="timeline"></div></div>
 </section>
 </div>
+
+<!-- 新增：神經與意識狀態評估 (GCS / Pupil / Muscle Power) -->
+<section class="card">
+<div class="page-label">神經與臨床評估</div>
+<div class="section-title">🧠 NEUROLOGICAL ASSESSMENT｜意識與神經學評估（非必填，依時序記錄）</div>
+<div class="notice">可於急救前、ROSC 後或急救過程中點選評估。評估項目不限制全填，系統將忠實記錄時序。</div>
+
+<div class="neuro-container">
+  <!-- GCS 評估 -->
+  <div class="neuro-block">
+    <div class="neuro-block-title">
+      <span>👁 GCS 昏迷指數</span>
+      <span id="gcsTotalDisplay" style="color:var(--blue);font-size:16px">總分：-</span>
+    </div>
+    <div class="neuro-row">
+      <label>E (睜眼)</label>
+      <select id="gcsE" onchange="calculateGCS()">
+        <option value="">- 請選擇 -</option>
+        <option value="4">4 - 自動睜眼 (Spontaneous)</option>
+        <option value="3">3 - 呼喚睜眼 (To speech)</option>
+        <option value="2">2 - 疼痛睜眼 (To pain)</option>
+        <option value="1">1 - 無反應 (None)</option>
+        <option value="C">C - 閉眼腫脹 (Closed)</option>
+      </select>
+    </div>
+    <div class="neuro-row">
+      <label>V (言語)</label>
+      <select id="gcsV" onchange="calculateGCS()">
+        <option value="">- 請選擇 -</option>
+        <option value="5">5 - 說話有條理 (Oriented)</option>
+        <option value="4">4 - 混淆胡言 (Confused)</option>
+        <option value="3">3 - 語無倫次 (Inappropriate)</option>
+        <option value="2">2 - 發出聲音 (Incomprehensible)</option>
+        <option value="1">1 - 無反應 (None)</option>
+        <option value="Vt">Vt - 氣管插管 (Intubated)</option>
+      </select>
+    </div>
+    <div class="neuro-row">
+      <label>M (動作)</label>
+      <select id="gcsM" onchange="calculateGCS()">
+        <option value="">- 請選擇 -</option>
+        <option value="6">6 - 遵從指令 (Obeys commands)</option>
+        <option value="5">5 - 疼痛定位 (Localizing)</option>
+        <option value="4">4 - 屈曲避痛 (Withdrawal)</option>
+        <option value="3">3 - 異常屈曲 (Decorticate)</option>
+        <option value="2">2 - 異常伸展 (Decerebrate)</option>
+        <option value="1">1 - 無反應 (None)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 瞳孔評估 (Pupil) -->
+  <div class="neuro-block">
+    <div class="neuro-block-title">
+      <span>👀 Pupil Size & Reflex</span>
+      <span style="font-size:12px;color:var(--muted)">直徑 / 對光反射</span>
+    </div>
+    <div class="neuro-row">
+      <label>右眼 (R)</label>
+      <select id="pupilSizeR">
+        <option value="">大小-未測</option>
+        <option value="1.0mm">1.0 mm</option>
+        <option value="1.5mm">1.5 mm</option>
+        <option value="2.0mm">2.0 mm</option>
+        <option value="2.5mm">2.5 mm</option>
+        <option value="3.0mm">3.0 mm</option>
+        <option value="3.5mm">3.5 mm</option>
+        <option value="4.0mm">4.0 mm</option>
+        <option value="4.5mm">4.5 mm</option>
+        <option value="5.0mm">5.0 mm</option>
+        <option value="Pinpoint">Pinpoint (針尖)</option>
+        <option value="Dilated">Dilated (放大)</option>
+      </select>
+      <select id="pupilReflexR">
+        <option value="">反射-未測</option>
+        <option value="+">＋ 靈敏 (Prompt)</option>
+        <option value="±">± 遲鈍 (Sluggish)</option>
+        <option value="-">－ 無反射 (Fixed)</option>
+      </select>
+    </div>
+    <div class="neuro-row">
+      <label>左眼 (L)</label>
+      <select id="pupilSizeL">
+        <option value="">大小-未測</option>
+        <option value="1.0mm">1.0 mm</option>
+        <option value="1.5mm">1.5 mm</option>
+        <option value="2.0mm">2.0 mm</option>
+        <option value="2.5mm">2.5 mm</option>
+        <option value="3.0mm">3.0 mm</option>
+        <option value="3.5mm">3.5 mm</option>
+        <option value="4.0mm">4.0 mm</option>
+        <option value="4.5mm">4.5 mm</option>
+        <option value="5.0mm">5.0 mm</option>
+        <option value="Pinpoint">Pinpoint (針尖)</option>
+        <option value="Dilated">Dilated (放大)</option>
+      </select>
+      <select id="pupilReflexL">
+        <option value="">反射-未測</option>
+        <option value="+">＋ 靈敏 (Prompt)</option>
+        <option value="±">± 遲鈍 (Sluggish)</option>
+        <option value="-">－ 無反射 (Fixed)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 四肢肌力 (Muscle Power) -->
+  <div class="neuro-block">
+    <div class="neuro-block-title">
+      <span>💪 Muscle Power 四肢肌力</span>
+      <span style="font-size:12px;color:var(--muted)">0~5 分</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="neuro-row">
+        <label style="width:45px">RU 上右</label>
+        <select id="mpRU">
+          <option value="">-</option>
+          <option value="5">5分(正常)</option>
+          <option value="4">4分(抗阻)</option>
+          <option value="3">3分(抗地心)</option>
+          <option value="2">2分(平移)</option>
+          <option value="1">1分(微動)</option>
+          <option value="0">0分(無力)</option>
+          <option value="UT">UT(無法測)</option>
+        </select>
+      </div>
+      <div class="neuro-row">
+        <label style="width:45px">LU 上左</label>
+        <select id="mpLU">
+          <option value="">-</option>
+          <option value="5">5分(正常)</option>
+          <option value="4">4分(抗阻)</option>
+          <option value="3">3分(抗地心)</option>
+          <option value="2">2分(平移)</option>
+          <option value="1">1分(微動)</option>
+          <option value="0">0分(無力)</option>
+          <option value="UT">UT(無法測)</option>
+        </select>
+      </div>
+      <div class="neuro-row">
+        <label style="width:45px">RL 下右</label>
+        <select id="mpRL">
+          <option value="">-</option>
+          <option value="5">5分(正常)</option>
+          <option value="4">4分(抗阻)</option>
+          <option value="3">3分(抗地心)</option>
+          <option value="2">2分(平移)</option>
+          <option value="1">1分(微動)</option>
+          <option value="0">0分(無力)</option>
+          <option value="UT">UT(無法測)</option>
+        </select>
+      </div>
+      <div class="neuro-row">
+        <label style="width:45px">LL 下左</label>
+        <select id="mpLL">
+          <option value="">-</option>
+          <option value="5">5分(正常)</option>
+          <option value="4">4分(抗阻)</option>
+          <option value="3">3分(抗地心)</option>
+          <option value="2">2分(平移)</option>
+          <option value="1">1分(微動)</option>
+          <option value="0">0分(無力)</option>
+          <option value="UT">UT(無法測)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="btn-row" style="margin-top:14px">
+  <button class="primary" style="padding:10px 20px;font-size:15px" onclick="recordNeurologicalStatus()">📝 記錄此神經與意識狀態</button>
+  <button class="neutral" style="padding:10px 14px;font-size:14px" onclick="clearNeuroInputs()">清空欄位</button>
+  <span id="neuroStatusMsg" class="small-status" style="align-self:center;font-weight:700;color:var(--green)"></span>
+</div>
+</section>
 
 <!-- Epinephrine 藥物治療卡片 -->
 <section class="card med-card">
@@ -883,6 +1059,109 @@ function recordEpinephrine() {
   }, 1500);
 }
 
+/* ====================================================================
+   【神經與意識評估邏輯 (GCS / Pupil / Muscle Power)】
+   ==================================================================== */
+function calculateGCS() {
+  const e = document.getElementById("gcsE").value;
+  const v = document.getElementById("gcsV").value;
+  const m = document.getElementById("gcsM").value;
+  const disp = document.getElementById("gcsTotalDisplay");
+
+  if (!e && !v && !m) {
+    disp.textContent = "總分：-";
+    return null;
+  }
+
+  const eNum = Number(e) || 0;
+  const vNum = Number(v) || 0;
+  const mNum = Number(m) || 0;
+  const total = eNum + vNum + mNum;
+
+  let label = `E${e || "-"}V${v || "-"}M${m || "-"}`;
+  if (e && v && m) {
+    if (v === "Vt" || e === "C") {
+      disp.textContent = `${label} (${total}+${v === 'Vt'?'Vt':''}${e === 'C'?'C':''})`;
+    } else {
+      disp.textContent = `總分：${total} 分 (${label})`;
+    }
+  } else {
+    disp.textContent = `部分：${label}`;
+  }
+  return { e, v, m, total, text: label };
+}
+
+function clearNeuroInputs() {
+  document.getElementById("gcsE").value = "";
+  document.getElementById("gcsV").value = "";
+  document.getElementById("gcsM").value = "";
+  document.getElementById("pupilSizeR").value = "";
+  document.getElementById("pupilReflexR").value = "";
+  document.getElementById("pupilSizeL").value = "";
+  document.getElementById("pupilReflexL").value = "";
+  document.getElementById("mpRU").value = "";
+  document.getElementById("mpLU").value = "";
+  document.getElementById("mpRL").value = "";
+  document.getElementById("mpLL").value = "";
+  document.getElementById("gcsTotalDisplay").textContent = "總分：-";
+  document.getElementById("neuroStatusMsg").textContent = "";
+}
+
+function recordNeurologicalStatus() {
+  const e = document.getElementById("gcsE").value;
+  const v = document.getElementById("gcsV").value;
+  const m = document.getElementById("gcsM").value;
+  const pSizeR = document.getElementById("pupilSizeR").value;
+  const pRefR = document.getElementById("pupilReflexR").value;
+  const pSizeL = document.getElementById("pupilSizeL").value;
+  const pRefL = document.getElementById("pupilReflexL").value;
+  const mpRU = document.getElementById("mpRU").value;
+  const mpLU = document.getElementById("mpLU").value;
+  const mpRL = document.getElementById("mpRL").value;
+  const mpLL = document.getElementById("mpLL").value;
+
+  const parts = [];
+  const details = {};
+
+  // GCS
+  if (e || v || m) {
+    const gcsRes = calculateGCS();
+    parts.push(`GCS: ${gcsRes.text}`);
+    details.gcs = gcsRes;
+  }
+
+  // Pupil
+  if (pSizeR || pRefR || pSizeL || pRefL) {
+    const rDesc = `R: ${pSizeR || '未測'}(${pRefR || '未測'})`;
+    const lDesc = `L: ${pSizeL || '未測'}(${pRefL || '未測'})`;
+    parts.push(`Pupil [${rDesc}, ${lDesc}]`);
+    details.pupil = { right: { size: pSizeR, reflex: pRefR }, left: { size: pSizeL, reflex: pRefL } };
+  }
+
+  // Muscle Power
+  if (mpRU || mpLU || mpRL || mpLL) {
+    const mpDesc = `MP [RU:${mpRU || '-'}, LU:${mpLU || '-'}, RL:${mpRL || '-'}, LL:${mpLL || '-'}]`;
+    parts.push(mpDesc);
+    details.musclePower = { RU: mpRU, LU: mpLU, RL: mpRL, LL: mpLL };
+  }
+
+  if (parts.length === 0) {
+    alert("請至少選擇一項評估項目（GCS、瞳孔或肌力）後再記錄！");
+    return;
+  }
+
+  const label = `神經學評估：${parts.join(" ｜ ")}`;
+  pushEvent(baseEvent(label, "NEURO_ASSESSMENT", details));
+
+  document.getElementById("neuroStatusMsg").textContent = "✓ 已記錄於時間軸";
+  setTimeout(() => {
+    const el = document.getElementById("neuroStatusMsg");
+    if (el) el.textContent = "";
+  }, 3000);
+
+  updateUI();
+}
+
 function setQuickMed(name, dose, route) {
   document.getElementById("customMedName").value = name;
   document.getElementById("customMedDose").value = dose;
@@ -1036,7 +1315,8 @@ function updateQICharts() {
     ["Amiodarone", countMed("ANTIARRHYTHMIC", "Amiodarone")],
     ["Lidocaine", countMed("ANTIARRHYTHMIC", "Lidocaine")],
     ["其他藥物", ev.filter(x => x.category === "OTHER_MEDICATION").length],
-    ["ETCO₂", ev.filter(x => x.category === "ETCO2").length]
+    ["ETCO₂", ev.filter(x => x.category === "ETCO2").length],
+    ["神經學評估", ev.filter(x => x.category === "NEURO_ASSESSMENT").length]
   ];
   qiSvgEventChart("qiEventChart", cats.map(([label, value]) => ({ label, value })));
 }
@@ -1137,6 +1417,11 @@ function buildMedicalNote() {
   const customMeds = ev.filter(x => x.category === "OTHER_MEDICATION");
   if (customMeds.length) {
     lines.push(`其他急救藥物：${customMeds.map(x => x.event).join("；")}`);
+  }
+
+  const neuros = ev.filter(x => x.category === "NEURO_ASSESSMENT");
+  if (neuros.length) {
+    lines.push(`神經/意識評估紀錄：\n  ${neuros.map(x => `${x.displayTime} ${x.event}`).join("\n  ")}`);
   }
 
   const et = ev.filter(x => x.category === "ETCO2").map(x => x.details?.etco2 ?? x.etco2).filter(v => v !== undefined && v !== null && v !== "");
@@ -1295,6 +1580,7 @@ function resetAll() {
   document.getElementById("customMedNote").value = "";
   document.getElementById("dataViewer").style.display = "none";
   document.getElementById("endCprPanel").style.display = "none";
+  clearNeuroInputs();
   updateUI();
   updateEpiTimer();
 }
@@ -1354,7 +1640,7 @@ function renderUnifiedRecord() {
             <div class="event-time">${e.cprElapsed}</div>
             <div class="event-main">
               <strong>${e.event}</strong>
-              <span>${e.displayTime}${e.inPausePhase ? "｜[評估/中斷期間執行]" : ""}${e.category === "QUALITY_INDICATOR" ? "｜品管監測" : ""}</span>
+              <span>${e.displayTime}${e.inPausePhase ? "｜[評估/中斷期間執行]" : ""}${e.category === "QUALITY_INDICATOR" ? "｜品管監測" : ""}${e.category === "NEURO_ASSESSMENT" ? "｜神經評估" : ""}</span>
             </div>
           </div>
         `).join("")}
