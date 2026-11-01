@@ -26,6 +26,14 @@ button{border:0;border-radius:11px;padding:13px 18px;font-size:16px;font-weight:
 button:disabled{opacity:.42;cursor:not-allowed}
 .primary{background:var(--blue);color:#fff}.danger{background:var(--red);color:#fff}.neutral{background:#e4e9ee;color:#243d52}.green{background:var(--green);color:#fff}.orange{background:var(--orange);color:#172a3b}.purple{background:var(--purple);color:#fff}.dark{background:#35536e;color:#fff}
 
+/* 就定位前／自由輸入面板 */
+.pre-cpr-box{background:#f4f8fc;border:1px solid #c9dcee;border-radius:14px;padding:16px;margin-top:14px}
+.pre-cpr-inputs{display:grid;grid-template-columns:160px 1fr 120px;gap:10px;align-items:center}
+.pre-cpr-inputs input{padding:10px 12px;border:1px solid #c8d5df;border-radius:8px;font-size:14px;background:#fff;width:100%}
+.pre-cpr-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pre-cpr-tags button{padding:6px 12px;font-size:12px;border-radius:6px;background:#e2ecf5;color:#123a5e;border:1px solid #c0d7ea;cursor:pointer;font-weight:700}
+.pre-cpr-tags button:hover{background:#d2e4f3}
+
 /* 整合版 Timeline 與 CPR Cycle Engine */
 .timeline{min-height:245px;max-height:560px;overflow:auto}
 .integrated-cycle-box{background:#102f4a;color:#fff;border-radius:15px;padding:16px 20px;margin-bottom:12px;transition:all .3s}
@@ -106,7 +114,7 @@ pre{background:#0e2234;color:#d8edf9;padding:16px;border-radius:12px;max-height:
 .copyright-card strong{color:#0d2c47}
 .footer{font-size:12px;color:#687d8e;background:#dfe8ef;border-radius:14px;padding:14px;line-height:1.7}
 .notice{background:#edf6ff;border:1px solid #c9e0f7;border-radius:12px;padding:12px;color:#24577c;margin-bottom:12px}
-@media(max-width:1100px){.neuro-container{grid-template-columns:1fr}}
+@media(max-width:1100px){.neuro-container{grid-template-columns:1fr}.pre-cpr-inputs{grid-template-columns:1fr}}
 @media(max-width:1000px){.two-col,.patient-grid,.status-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.free-med-inputs{grid-template-columns:1fr 1fr}}
 @media(max-width:650px){.rhythm-grid,.action-grid,.drug-grid,.summary-grid,.free-med-inputs{grid-template-columns:1fr}.timer .time{font-size:50px}.cycle-countdown-time{font-size:36px}}
@@ -171,6 +179,33 @@ img, svg { max-width: 100%; height: auto; }
 <div class="info"><small>PATIENT ID</small><input id="patientIdInput" type="text" placeholder="請輸入病人 ID" style="width:100%;margin-top:6px;border:0;background:transparent;font-size:18px;font-weight:800;color:#102f4a;outline:none"></div>
 <div class="info"><small>LOCATION</small><input id="locationInput" type="text" placeholder="地點 / 床號" style="width:100%;margin-top:6px;border:0;background:transparent;font-size:18px;font-weight:800;color:#102f4a;outline:none"></div>
 <div class="info"><small>EVENT TYPE｜事件類型</small><strong>999 非預期急救事件</strong></div>
+</div>
+
+<!-- 新增：急救啟動前／現場就定位歷程記錄區 -->
+<div class="pre-cpr-box">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+    <strong style="color:#102f4a;font-size:15px">⏱ 啟動前歷程／現場事件記錄（就定位前即刻可用，真實時間可微調）</strong>
+    <span style="font-size:12px;color:var(--muted)">可自動帶入當前時鐘，亦可點擊時間手動微調回溯</span>
+  </div>
+
+  <div class="pre-cpr-inputs">
+    <div style="position:relative">
+      <input id="preCprTimeInput" type="text" placeholder="HH:mm:ss" title="真實時間，可點此手動修改">
+    </div>
+    <input id="preCprEventInput" type="text" placeholder="事件描述（點選下方快捷標籤或直接鍵入）">
+    <button class="primary" style="padding:10px 14px;font-size:14px" onclick="recordPreCprEvent()">＋ 記錄事件</button>
+  </div>
+
+  <div class="pre-cpr-tags">
+    <button type="button" onclick="setPreCprTag('發現病人倒地/無反應')">發現倒地/無反應</button>
+    <button type="button" onclick="setPreCprTag('啟動 999 廣播')">啟動 999 廣播</button>
+    <button type="button" onclick="setPreCprTag('急救車及除顫器抵達')">急救車/除顫器抵達</button>
+    <button type="button" onclick="setPreCprTag('接上心臟監視器/貼片')">接上監視器/貼片</button>
+    <button type="button" onclick="setPreCprTag('確認無呼吸、無脈搏')">確認無呼吸脈搏</button>
+    <button type="button" onclick="setPreCprTag('建立靜脈/骨內管路 (IV/IO)')">建立 IV/IO 管路</button>
+    <button type="button" onclick="resetPreCprTimeToNow()" style="background:#e8f4fd;color:var(--blue);border-color:#b9d9f5">↻ 恢復現在時間</button>
+  </div>
+  <div id="preCprStatusMsg" style="font-size:12px;color:var(--green);margin-top:6px;font-weight:700"></div>
 </div>
 </section>
 
@@ -265,7 +300,7 @@ img, svg { max-width: 100%; height: auto; }
 </section>
 </div>
 
-<!-- 新增：神經與意識狀態評估 (GCS / Pupil / Muscle Power) -->
+<!-- 神經與意識狀態評估 (GCS / Pupil / Muscle Power) -->
 <section class="card">
 <div class="page-label">神經與臨床評估</div>
 <div class="section-title">🧠 NEUROLOGICAL ASSESSMENT｜意識與神經學評估（非必填，依時序記錄）</div>
@@ -697,6 +732,70 @@ const iso = () => new Date().toISOString();
 const displayClock = () => new Date().toLocaleTimeString("zh-TW", { hour12: false });
 const getCycleDuration = () => state.testMode ? 10 : 120;
 
+/* ====================================================================
+   【急救啟動前／現場就定位歷程輸入 (Pre-CPR / Free Event)】
+   ==================================================================== */
+let userModifiedPreCprTime = false;
+
+function updatePreCprTimeClock() {
+  const input = document.getElementById("preCprTimeInput");
+  if (input && !userModifiedPreCprTime) {
+    input.value = displayClock();
+  }
+}
+
+document.getElementById("preCprTimeInput")?.addEventListener("input", () => {
+  userModifiedPreCprTime = true;
+});
+
+function resetPreCprTimeToNow() {
+  userModifiedPreCprTime = false;
+  const input = document.getElementById("preCprTimeInput");
+  if (input) input.value = displayClock();
+}
+
+function setPreCprTag(txt) {
+  const input = document.getElementById("preCprEventInput");
+  if (input) input.value = txt;
+}
+
+function recordPreCprEvent() {
+  const eventTxt = document.getElementById("preCprEventInput").value.trim();
+  const timeTxt = document.getElementById("preCprTimeInput").value.trim() || displayClock();
+
+  if (!eventTxt) {
+    alert("請先輸入或點選事件描述！");
+    return;
+  }
+
+  const e = {
+    eventId: `EVT-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
+    event: eventTxt,
+    category: "PRE_CPR_EVENT",
+    actualTimestamp: iso(),
+    displayTime: timeTxt,
+    cprElapsed: state.started ? formatTime(state.elapsed) : "--:--",
+    cprSeconds: state.started ? state.elapsed : 0,
+    cycle: state.cycle || 0,
+    inPausePhase: state.waitingRhythm,
+    rhythm: state.currentRhythm || null,
+    rhythmChinese: state.currentRhythm ? rhythmDefinitions[state.currentRhythm].chinese : null,
+    details: { manualClockTime: timeTxt, isPreCpr: !state.started }
+  };
+
+  pushEvent(e);
+
+  document.getElementById("preCprEventInput").value = "";
+  document.getElementById("preCprStatusMsg").textContent = `✓ 已記錄：${timeTxt} ${eventTxt}`;
+  setTimeout(() => {
+    const el = document.getElementById("preCprStatusMsg");
+    if (el) el.textContent = "";
+  }, 3500);
+
+  resetPreCprTimeToNow();
+  updateUI();
+}
+
 function toggleTestMode() {
   if (state.started) {
     alert("急救流程進行中無法切換測試模式。請重置後再設定。");
@@ -1123,14 +1222,12 @@ function recordNeurologicalStatus() {
   const parts = [];
   const details = {};
 
-  // GCS
   if (e || v || m) {
     const gcsRes = calculateGCS();
     parts.push(`GCS: ${gcsRes.text}`);
     details.gcs = gcsRes;
   }
 
-  // Pupil
   if (pSizeR || pRefR || pSizeL || pRefL) {
     const rDesc = `R: ${pSizeR || '未測'}(${pRefR || '未測'})`;
     const lDesc = `L: ${pSizeL || '未測'}(${pRefL || '未測'})`;
@@ -1138,7 +1235,6 @@ function recordNeurologicalStatus() {
     details.pupil = { right: { size: pSizeR, reflex: pRefR }, left: { size: pSizeL, reflex: pRefL } };
   }
 
-  // Muscle Power
   if (mpRU || mpLU || mpRL || mpLL) {
     const mpDesc = `MP [RU:${mpRU || '-'}, LU:${mpLU || '-'}, RL:${mpRL || '-'}, LL:${mpLL || '-'}]`;
     parts.push(mpDesc);
@@ -1316,7 +1412,8 @@ function updateQICharts() {
     ["Lidocaine", countMed("ANTIARRHYTHMIC", "Lidocaine")],
     ["其他藥物", ev.filter(x => x.category === "OTHER_MEDICATION").length],
     ["ETCO₂", ev.filter(x => x.category === "ETCO2").length],
-    ["神經學評估", ev.filter(x => x.category === "NEURO_ASSESSMENT").length]
+    ["神經評估", ev.filter(x => x.category === "NEURO_ASSESSMENT").length],
+    ["就定位前事件", ev.filter(x => x.category === "PRE_CPR_EVENT").length]
   ];
   qiSvgEventChart("qiEventChart", cats.map(([label, value]) => ({ label, value })));
 }
@@ -1389,9 +1486,19 @@ function buildMedicalNote() {
   if (p.location) lines.push(`Location：${p.location}`);
   lines.push("");
 
-  (state.events || []).forEach(e => {
+  const preEvents = (state.events || []).filter(e => e.category === "PRE_CPR_EVENT" || e.cycle === 0);
+  if (preEvents.length) {
+    lines.push("【急救啟動前與就定位歷程】");
+    preEvents.forEach(e => {
+      lines.push(`${e.displayTime || ""} ${e.event || ""}`);
+    });
+    lines.push("");
+  }
+
+  lines.push("【CPR 與急救事件歷程】");
+  (state.events || []).filter(e => !(e.category === "PRE_CPR_EVENT" && e.cycle === 0)).forEach(e => {
     let line = `${e.displayTime || ""} ${e.event || ""}`;
-    if (e.cprElapsed) line += ` [CPR ${e.cprElapsed}]`;
+    if (e.cprElapsed && e.cprElapsed !== "--:--") line += ` [CPR ${e.cprElapsed}]`;
     if (e.cycle != null) line += ` [Cycle ${e.cycle}]`;
     lines.push(line);
   });
@@ -1578,9 +1685,11 @@ function resetAll() {
   document.getElementById("customMedDose").value = "";
   document.getElementById("customMedRoute").value = "IV/IO";
   document.getElementById("customMedNote").value = "";
+  document.getElementById("preCprEventInput").value = "";
   document.getElementById("dataViewer").style.display = "none";
   document.getElementById("endCprPanel").style.display = "none";
   clearNeuroInputs();
+  resetPreCprTimeToNow();
   updateUI();
   updateEpiTimer();
 }
@@ -1626,7 +1735,7 @@ function renderUnifiedRecord() {
     return `<div style="border:1px solid #dce6ed;border-radius:14px;margin:12px 0;overflow:hidden;background:#fff">
       <div style="background:#f1f6fa;padding:12px 14px;font-weight:900;border-bottom:1px solid #e2ebf0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div>
-          <span style="font-size:16px;color:#102f4a">${c === 0 ? "急救啟動前" : `CPR Cycle ${c}`}</span>
+          <span style="font-size:16px;color:#102f4a">${c === 0 ? "急救啟動前 / 就定位歷程" : `CPR Cycle ${c}`}</span>
           ${lastRhythmEvt ? `<span style="margin-left:8px;font-size:13px;color:#185394">｜心律：${lastRhythmEvt.rhythm || ""}</span>` : ""}
         </div>
         ${pauseEvt ? `<div>
@@ -1640,7 +1749,7 @@ function renderUnifiedRecord() {
             <div class="event-time">${e.cprElapsed}</div>
             <div class="event-main">
               <strong>${e.event}</strong>
-              <span>${e.displayTime}${e.inPausePhase ? "｜[評估/中斷期間執行]" : ""}${e.category === "QUALITY_INDICATOR" ? "｜品管監測" : ""}${e.category === "NEURO_ASSESSMENT" ? "｜神經評估" : ""}</span>
+              <span>${e.displayTime}${e.inPausePhase ? "｜[評估/中斷期間執行]" : ""}${e.category === "QUALITY_INDICATOR" ? "｜品管監測" : ""}${e.category === "NEURO_ASSESSMENT" ? "｜神經評估" : ""}${e.category === "PRE_CPR_EVENT" ? "｜現場事件" : ""}</span>
             </div>
           </div>
         `).join("")}
@@ -1820,6 +1929,8 @@ function showData() {
   pre.textContent = JSON.stringify(buildExport(), null, 2);
 }
 
+setInterval(updatePreCprTimeClock, 1000);
+updatePreCprTimeClock();
 updateUI();
 </script>
 </body>
